@@ -59,6 +59,13 @@ export function httpErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
     const detail = error.error?.detail;
     if (typeof detail === 'string' && detail.trim()) return detail;
+    // FastAPI devuelve los errores de validación (422) como una lista de { loc, msg }.
+    if (Array.isArray(detail) && detail.length) {
+      const fields = detail
+        .map((item) => (Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : null))
+        .filter((field): field is string => typeof field === 'string');
+      if (fields.length) return `${fallback}. Revisa: ${[...new Set(fields)].join(', ')}`;
+    }
   }
   return fallback;
 }
