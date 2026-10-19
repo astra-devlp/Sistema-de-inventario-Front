@@ -1,0 +1,54 @@
+<app-modal [open]="open()" [title]="editing() ? 'Editar precio' : 'Nuevo precio'" (closed)="closed.emit()">
+  <form class="form-grid" (submit)="$event.preventDefault()">
+    <div class="field field--full">
+      <label class="label" for="pc-product">Producto <span class="required">*</span></label>
+      <select id="pc-product" class="select">
+        <option value="">Seleccionar producto</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pc-list">Lista de precios</label>
+      <select id="pc-list" class="select">
+        <option>Detal</option>
+        <option>Mayorista</option>
+        <option>Distribuidor</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pc-pres">Presentación</label>
+      <select id="pc-pres" class="select">
+        <option value="">Unidad suelta</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pc-cost">Costo</label>
+      <div class="input-group">
+        <span class="input-group__addon">$</span>
+        <input id="pc-cost" class="input" type="number" min="0" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="pc-margin">Margen</label>
+      <div class="input-group">
+        <input id="pc-margin" class="input" type="number" min="0" placeholder="0" />
+        <span class="input-group__addon">%</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="pc-price">Precio sin IVA <span class="required">*</span></label>
+      <div class="input-group">
+        <span class="input-group__addon">$</span>
+        <input id="pc-price" class="input" type="number" min="0" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="pc-final">Precio con IVA</label>
+      <input id="pc-final" class="input" type="text" placeholder="Calculado automáticamente" disabled />
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" (click)="closed.emit()">Guardar precio</button>
+  </div>
+</app-modal>

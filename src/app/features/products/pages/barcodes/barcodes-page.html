@@ -1,0 +1,62 @@
+<app-page-header title="Códigos de barras y SKU" subtitle="Administra los identificadores de cada producto y presentación.">
+  <div actions>
+    <button type="button" class="btn btn--outline"><app-icon name="printer" /> Imprimir etiquetas</button>
+    <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Asignar código</button>
+  </div>
+</app-page-header>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar por SKU o código de barras" />
+    </div>
+    <select class="select w-auto" aria-label="Tipo de código">
+      <option>Todos los tipos</option>
+      <option>EAN-13</option>
+      <option>EAN-8</option>
+      <option>UPC-A</option>
+      <option>Code 128</option>
+      <option>QR</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>SKU</th>
+          <th>Código de barras</th>
+          <th>Tipo</th>
+          <th>Presentación</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of placeholderRows; track row) {
+          <tr>
+            <td>—</td>
+            <td class="text-mono text-muted">—</td>
+            <td class="text-mono text-muted">—</td>
+            <td><span class="badge badge--primary">—</span></td>
+            <td class="text-muted">—</td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-barcode-form-modal [open]="modal() === 'create' || modal() === 'edit'" [editing]="modal() === 'edit'" (closed)="close()" />
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Eliminar código"
+  message="¿Deseas eliminar este código?"
+  (closed)="close()"
+  (confirmed)="close()"
+/>

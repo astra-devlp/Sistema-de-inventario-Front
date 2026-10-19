@@ -1,0 +1,102 @@
+<app-page-header title="Precios e IVA" subtitle="Configura listas de precios y tarifas de impuestos.">
+  <div actions>
+    <button type="button" class="btn btn--outline" (click)="open('tax-create')"><app-icon name="percent" /> Nueva tarifa de IVA</button>
+    <button type="button" class="btn btn--primary" (click)="open('price-create')"><app-icon name="plus" /> Nuevo precio</button>
+  </div>
+</app-page-header>
+
+<section class="card mb-4">
+  <div class="card__header">
+    <h2 class="card__title">Precios por producto</h2>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar producto" />
+    </div>
+    <select class="select w-auto" aria-label="Lista de precios">
+      <option>Todas las listas</option>
+      <option>Detal</option>
+      <option>Mayorista</option>
+      <option>Distribuidor</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Presentación</th>
+          <th>Lista</th>
+          <th class="col-num">Costo</th>
+          <th class="col-num">Margen</th>
+          <th class="col-num">Precio sin IVA</th>
+          <th>IVA</th>
+          <th class="col-num">Precio con IVA</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of priceRows; track row) {
+          <tr>
+            <td>—</td>
+            <td class="text-muted">—</td>
+            <td><span class="badge badge--primary">—</span></td>
+            <td class="col-num">—</td>
+            <td class="col-num">—</td>
+            <td class="col-num">—</td>
+            <td class="text-muted">—</td>
+            <td class="col-num">—</td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('price-edit')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">Tarifas de IVA</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th class="col-num">Porcentaje</th>
+          <th>Por defecto</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of taxRows; track row) {
+          <tr>
+            <td>—</td>
+            <td class="col-num">—</td>
+            <td class="text-muted">—</td>
+            <td><span class="badge">—</span></td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('tax-edit')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-price-form-modal [open]="modal() === 'price-create' || modal() === 'price-edit'" [editing]="modal() === 'price-edit'" (closed)="close()" />
+<app-tax-form-modal [open]="modal() === 'tax-create' || modal() === 'tax-edit'" [editing]="modal() === 'tax-edit'" (closed)="close()" />
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Confirmar eliminación"
+  message="¿Deseas eliminar este registro?"
+  (closed)="close()"
+  (confirmed)="close()"
+/>

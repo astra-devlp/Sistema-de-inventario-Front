@@ -1,0 +1,11 @@
+/* Estilos globales: único punto de entrada. Los componentes no llevan CSS propio. */
+@import './styles/variables.css';
+@import './styles/base.css';
+@import './styles/layout.css';
+@import './styles/buttons.css';
+@import './styles/forms.css';
+@import './styles/tables.css';
+@import './styles/cards.css';
+@import './styles/badges.css';
+@import './styles/modal.css';
+@import './styles/utilities.css';

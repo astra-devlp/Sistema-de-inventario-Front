@@ -1,0 +1,96 @@
+<app-modal [open]="open()" [title]="editing() ? 'Editar producto' : 'Nuevo producto'" size="lg" (closed)="closed.emit()">
+  <form class="form-grid" (submit)="$event.preventDefault()">
+    <h3 class="form-section-title">Información general</h3>
+    <div class="field field--full">
+      <label class="label" for="pf-name">Nombre <span class="required">*</span></label>
+      <input id="pf-name" class="input" type="text" placeholder="Ej: Aceite de oliva 500 ml" />
+    </div>
+    <div class="field">
+      <label class="label" for="pf-category">Categoría <span class="required">*</span></label>
+      <select id="pf-category" class="select">
+        <option value="">Seleccionar categoría</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pf-brand">Marca</label>
+      <input id="pf-brand" class="input" type="text" placeholder="Ej: Marca X" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="pf-desc">Descripción</label>
+      <textarea id="pf-desc" class="textarea" placeholder="Descripción opcional del producto"></textarea>
+    </div>
+
+    <h3 class="form-section-title">Identificación</h3>
+    <div class="field">
+      <label class="label" for="pf-sku">SKU <span class="required">*</span></label>
+      <input id="pf-sku" class="input text-mono" type="text" placeholder="Ej: ACE-OLI-500" />
+    </div>
+    <div class="field">
+      <label class="label" for="pf-barcode">Código de barras</label>
+      <input id="pf-barcode" class="input text-mono" type="text" placeholder="EAN-13 / UPC" />
+    </div>
+
+    <h3 class="form-section-title">Unidad y presentación</h3>
+    <div class="field">
+      <label class="label" for="pf-unit">Unidad de medida <span class="required">*</span></label>
+      <select id="pf-unit" class="select">
+        <option value="">Seleccionar unidad</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pf-pres">Presentación</label>
+      <select id="pf-pres" class="select">
+        <option value="">Unidad suelta</option>
+      </select>
+      <span class="hint">Ej: Caja x100</span>
+    </div>
+
+    <h3 class="form-section-title">Precios e impuestos</h3>
+    <div class="field">
+      <label class="label" for="pf-cost">Costo</label>
+      <div class="input-group">
+        <span class="input-group__addon">$</span>
+        <input id="pf-cost" class="input" type="number" min="0" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="pf-price">Precio de venta <span class="required">*</span></label>
+      <div class="input-group">
+        <span class="input-group__addon">$</span>
+        <input id="pf-price" class="input" type="number" min="0" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="pf-tax">IVA</label>
+      <select id="pf-tax" class="select">
+        <option value="">Seleccionar IVA</option>
+        <option>0%</option>
+        <option>5%</option>
+        <option>19%</option>
+        <option>Exento</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pf-final">Precio con IVA</label>
+      <input id="pf-final" class="input" type="text" placeholder="Calculado automáticamente" disabled />
+    </div>
+
+    <h3 class="form-section-title">Inventario</h3>
+    <div class="field">
+      <label class="label" for="pf-min">Stock mínimo</label>
+      <input id="pf-min" class="input" type="number" min="0" placeholder="0" />
+    </div>
+    <div class="field">
+      <label class="label" for="pf-status">Estado</label>
+      <select id="pf-status" class="select">
+        <option>Activo</option>
+        <option>Inactivo</option>
+      </select>
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" (click)="closed.emit()">Guardar producto</button>
+  </div>
+</app-modal>

@@ -1,0 +1,82 @@
+<app-page-header title="Unidades y presentaciones" subtitle="Define unidades de medida y empaques (ej: Caja x100).">
+  <div actions>
+    <button type="button" class="btn btn--outline" (click)="open('unit-create')"><app-icon name="plus" /> Nueva unidad</button>
+    <button type="button" class="btn btn--primary" (click)="open('pres-create')"><app-icon name="plus" /> Nueva presentación</button>
+  </div>
+</app-page-header>
+
+<div class="grid grid--2">
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">Unidades de medida</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Abrev.</th>
+            <th>Tipo</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of placeholderRows; track row) {
+            <tr>
+              <td>—</td>
+              <td class="text-mono text-muted">—</td>
+              <td><span class="badge">—</span></td>
+              <td class="col-actions">
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('unit-edit')"><app-icon name="edit" /></button>
+                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">Presentaciones</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Empaque</th>
+            <th class="col-num">Cantidad</th>
+            <th>Unidad base</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of placeholderRows; track row) {
+            <tr>
+              <td>—</td>
+              <td class="text-muted">—</td>
+              <td class="col-num">—</td>
+              <td class="text-muted">—</td>
+              <td class="col-actions">
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('pres-edit')"><app-icon name="edit" /></button>
+                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<app-unit-form-modal [open]="modal() === 'unit-create' || modal() === 'unit-edit'" [editing]="modal() === 'unit-edit'" (closed)="close()" />
+<app-presentation-form-modal [open]="modal() === 'pres-create' || modal() === 'pres-edit'" [editing]="modal() === 'pres-edit'" (closed)="close()" />
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Confirmar eliminación"
+  message="¿Deseas eliminar este registro?"
+  (closed)="close()"
+  (confirmed)="close()"
+/>

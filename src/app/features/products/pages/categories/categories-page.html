@@ -1,0 +1,58 @@
+<app-page-header title="Categorías" subtitle="Organiza tus productos por categorías y subcategorías.">
+  <div actions>
+    <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Nueva categoría</button>
+  </div>
+</app-page-header>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar categoría" />
+    </div>
+    <select class="select w-auto" aria-label="Estado">
+      <option>Todos los estados</option>
+      <option>Activa</option>
+      <option>Inactiva</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Categoría padre</th>
+          <th class="col-num">Productos</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of placeholderRows; track row) {
+          <tr>
+            <td class="text-mono text-muted">—</td>
+            <td>—</td>
+            <td class="text-muted">—</td>
+            <td class="col-num">—</td>
+            <td><span class="badge">—</span></td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-category-form-modal [open]="modal() === 'create' || modal() === 'edit'" [editing]="modal() === 'edit'" (closed)="close()" />
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Eliminar categoría"
+  message="¿Deseas eliminar esta categoría?"
+  (closed)="close()"
+  (confirmed)="close()"
+/>

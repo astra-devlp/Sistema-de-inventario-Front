@@ -1,0 +1,26 @@
+<app-modal [open]="open()" [title]="editing() ? 'Editar unidad' : 'Nueva unidad de medida'" size="sm" (closed)="closed.emit()">
+  <form class="stack" (submit)="$event.preventDefault()">
+    <div class="field">
+      <label class="label" for="uf-name">Nombre <span class="required">*</span></label>
+      <input id="uf-name" class="input" type="text" placeholder="Ej: Kilogramo" />
+    </div>
+    <div class="field">
+      <label class="label" for="uf-abbr">Abreviatura <span class="required">*</span></label>
+      <input id="uf-abbr" class="input" type="text" placeholder="Ej: kg" />
+    </div>
+    <div class="field">
+      <label class="label" for="uf-type">Tipo</label>
+      <select id="uf-type" class="select">
+        <option>Cantidad</option>
+        <option>Peso</option>
+        <option>Volumen</option>
+        <option>Longitud</option>
+      </select>
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" (click)="closed.emit()">Guardar unidad</button>
+  </div>
+</app-modal>

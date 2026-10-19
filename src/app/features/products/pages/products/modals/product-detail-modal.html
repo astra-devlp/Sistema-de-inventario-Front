@@ -1,0 +1,23 @@
+<app-modal [open]="open()" title="Detalle del producto" size="lg" (closed)="closed.emit()">
+  <dl class="detail-list">
+    <div><dt>Nombre</dt><dd>—</dd></div>
+    <div><dt>Categoría</dt><dd>—</dd></div>
+    <div><dt>SKU</dt><dd class="text-mono">—</dd></div>
+    <div><dt>Marca</dt><dd>—</dd></div>
+    <div><dt>Unidad de medida</dt><dd>—</dd></div>
+    <div><dt>Presentación</dt><dd>—</dd></div>
+    <div><dt>Costo</dt><dd>—</dd></div>
+    <div><dt>Precio de venta</dt><dd>—</dd></div>
+    <div><dt>IVA</dt><dd>—</dd></div>
+    <div><dt>Estado</dt><dd><span class="badge badge--success">Activo</span></dd></div>
+  </dl>
+
+  <div class="barcode-preview mt-4">
+    <div class="barcode-preview__bars"></div>
+    <span class="barcode-preview__code">0000000000000</span>
+  </div>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cerrar</button>
+  </div>
+</app-modal>

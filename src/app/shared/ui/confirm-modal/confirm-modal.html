@@ -1,0 +1,11 @@
+<app-modal [open]="open()" [title]="title()" size="sm" (closed)="closed.emit()">
+  <div class="confirm">
+    <div class="confirm__icon"><app-icon name="alert" [size]="24" /></div>
+    <p>{{ message() }}</p>
+    <p class="hint">Esta acción no se puede deshacer.</p>
+  </div>
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--danger" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+  </div>
+</app-modal>

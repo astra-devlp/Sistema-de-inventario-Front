@@ -1,0 +1,99 @@
+<app-page-header title="Productos" subtitle="Gestiona el catálogo de productos, SKU, presentaciones y precios.">
+  <div actions>
+    <button type="button" class="btn btn--outline"><app-icon name="upload" /> Importar</button>
+    <button type="button" class="btn btn--outline"><app-icon name="download" /> Exportar</button>
+    <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Nuevo producto</button>
+  </div>
+</app-page-header>
+
+<section class="grid grid--4 mb-4">
+  <div class="card stat">
+    <span class="stat__icon"><app-icon name="box" [size]="22" /></span>
+    <div><p class="stat__label">Total productos</p><p class="stat__value">0</p></div>
+  </div>
+  <div class="card stat">
+    <span class="stat__icon stat__icon--success"><app-icon name="check" [size]="22" /></span>
+    <div><p class="stat__label">Activos</p><p class="stat__value">0</p></div>
+  </div>
+  <div class="card stat">
+    <span class="stat__icon stat__icon--info"><app-icon name="tag" [size]="22" /></span>
+    <div><p class="stat__label">Categorías</p><p class="stat__value">0</p></div>
+  </div>
+  <div class="card stat">
+    <span class="stat__icon stat__icon--warning"><app-icon name="alert" [size]="22" /></span>
+    <div><p class="stat__label">Inactivos</p><p class="stat__value">0</p></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar por nombre, SKU o código de barras" />
+    </div>
+    <select class="select w-auto" aria-label="Categoría">
+      <option>Todas las categorías</option>
+    </select>
+    <select class="select w-auto" aria-label="Estado">
+      <option>Todos los estados</option>
+      <option>Activo</option>
+      <option>Inactivo</option>
+    </select>
+    <button type="button" class="btn btn--outline"><app-icon name="filter" /> Filtros</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th>Código de barras</th>
+          <th>Presentación</th>
+          <th class="col-num">Precio</th>
+          <th>IVA</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of placeholderRows; track row) {
+          <tr>
+            <td class="text-mono text-muted">—</td>
+            <td>—</td>
+            <td class="text-muted">—</td>
+            <td class="text-mono text-muted">—</td>
+            <td class="text-muted">—</td>
+            <td class="col-num">—</td>
+            <td class="text-muted">—</td>
+            <td><span class="badge">—</span></td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Ver detalle" (click)="open('detail')"><app-icon name="eye" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span>Mostrando 0 de 0 productos</span>
+    <div class="pagination__buttons">
+      <button type="button" class="btn btn--outline btn--sm" disabled><app-icon name="chevron-left" [size]="16" /></button>
+      <button type="button" class="btn btn--outline btn--sm" disabled><app-icon name="chevron-right" [size]="16" /></button>
+    </div>
+  </div>
+</section>
+
+<app-product-form-modal [open]="modal() === 'create' || modal() === 'edit'" [editing]="modal() === 'edit'" (closed)="close()" />
+<app-product-detail-modal [open]="modal() === 'detail'" (closed)="close()" />
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Eliminar producto"
+  message="¿Deseas eliminar este producto?"
+  (closed)="close()"
+  (confirmed)="close()"
+/>
