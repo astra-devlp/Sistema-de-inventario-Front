@@ -36,3 +36,5 @@
 }
 .btn--icon:hover { background: var(--surface-alt); color: var(--primary); }
 .btn--icon.btn--danger-hover:hover { color: var(--danger); background: var(--danger-soft); }
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }

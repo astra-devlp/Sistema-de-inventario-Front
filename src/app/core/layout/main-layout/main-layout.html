@@ -63,8 +63,11 @@
       </button>
       <span class="topbar__spacer"></span>
       <div class="topbar__user">
-        <span class="avatar">U</span>
-        <span>Usuario</span>
+        <span class="avatar">{{ initial() }}</span>
+        <span>{{ user()?.name }}</span>
+        <button type="button" class="btn btn--icon" aria-label="Cerrar sesión" (click)="logout()">
+          <app-icon name="logout" />
+        </button>
       </div>
     </header>
 

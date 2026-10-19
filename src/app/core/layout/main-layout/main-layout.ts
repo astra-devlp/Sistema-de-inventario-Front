@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from '@core/auth/auth.service';
 import { NAV_GROUPS, UPCOMING_NAV } from '@core/navigation/nav.config';
 import { Icon } from '@shared/ui/icon/icon';
 
@@ -9,8 +10,13 @@ import { Icon } from '@shared/ui/icon/icon';
   templateUrl: './main-layout.html',
 })
 export class MainLayout {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
   protected readonly groups = NAV_GROUPS;
   protected readonly upcoming = UPCOMING_NAV;
+  protected readonly user = this.auth.user;
+  protected readonly initial = computed(() => (this.user()?.name.trim().charAt(0) || 'U').toUpperCase());
 
   /** Móvil: el menú es un cajón superpuesto. */
   protected readonly drawerOpen = signal(false);
@@ -33,6 +39,11 @@ export class MainLayout {
 
   protected isExpanded(id: string): boolean {
     return this.expanded().has(id);
+  }
+
+  protected logout(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
   }
 
   protected toggleGroup(id: string): void {

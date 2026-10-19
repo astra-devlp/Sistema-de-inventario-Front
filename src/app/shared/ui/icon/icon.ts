@@ -13,6 +13,7 @@ import {
   LucideFunnel,
   LucideHouse,
   LucideLayers,
+  LucideLogOut,
   LucideMenu,
   LucidePanelLeft,
   LucidePercent,
@@ -62,6 +63,7 @@ const ICONS = {
   cart: LucideShoppingCart,
   truck: LucideTruck,
   users: LucideUsers,
+  logout: LucideLogOut,
   filter: LucideFunnel,
   check: LucideCheck,
 } as const;

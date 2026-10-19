@@ -1,0 +1,47 @@
+<app-modal [open]="open()" [title]="user() ? 'Editar usuario' : 'Nuevo usuario'" (closed)="closed.emit()">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full">{{ error() }}</p>
+    }
+    <div class="field field--full">
+      <label class="label" for="uf-name">Nombre <span class="required">*</span></label>
+      <input id="uf-name" class="input" type="text" formControlName="name" />
+    </div>
+    <div class="field">
+      <label class="label" for="uf-email">Correo <span class="required">*</span></label>
+      <input id="uf-email" class="input" type="email" formControlName="email" />
+    </div>
+    <div class="field">
+      <label class="label" for="uf-phone">Teléfono</label>
+      <input id="uf-phone" class="input" type="tel" formControlName="phone" />
+    </div>
+    <div class="field">
+      <label class="label" for="uf-role">Rol</label>
+      <select id="uf-role" class="select" formControlName="role">
+        @for (role of roles; track role) {
+          <option [value]="role">{{ role }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="uf-password">
+        Contraseña
+        @if (!user()) { <span class="required">*</span> }
+      </label>
+      <input id="uf-password" class="input" type="password" formControlName="password" autocomplete="new-password" />
+      @if (user()) {
+        <span class="hint">Déjala vacía si no quieres cambiarla.</span>
+      }
+    </div>
+    @if (user()) {
+      <label class="check field--full"><input type="checkbox" formControlName="is_active" /> Usuario activo</label>
+    }
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar usuario' }}
+    </button>
+  </div>
+</app-modal>
