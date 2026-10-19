@@ -27,7 +27,8 @@ export class UserFormModal {
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     password: new FormControl('', { nonNullable: true }),
     role: new FormControl<UserRole>('Usuario', { nonNullable: true }),
-    phone: new FormControl('', { nonNullable: true }),
+    // Igual que la API: separadores opcionales y entre 9 y 10 dígitos.
+    phone: new FormControl('', { nonNullable: true, validators: [Validators.pattern(/^\s*(?:[\s.\-()]*\d){9,10}[\s.\-()]*$/)] }),
     is_active: new FormControl(true, { nonNullable: true }),
   });
 
@@ -50,6 +51,11 @@ export class UserFormModal {
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const { name, email, phone } = this.form.controls;
+      if (name.invalid) this.error.set('El nombre es obligatorio');
+      else if (email.invalid) this.error.set('El correo no es válido');
+      else if (phone.invalid) this.error.set('El teléfono debe tener entre 9 y 10 dígitos');
+      else this.error.set('Revisa los campos del formulario');
       return;
     }
     const raw = this.form.getRawValue();

@@ -1,0 +1,84 @@
+<app-page-header title="Clientes" subtitle="Tipo y número de documento listos para la DIAN.">
+  <div actions>
+    <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Nuevo cliente</button>
+  </div>
+</app-page-header>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar por nombre o documento" [value]="query()" (input)="onSearch($event)" />
+    </div>
+    <select class="select select--auto" aria-label="Tipo de documento" [value]="documentType()" (change)="onType($event)">
+      <option value="">Todos los documentos</option>
+      <optgroup label="Más usados">
+        @for (type of documentTypeGroups().common; track type.code) {
+          <option [value]="type.code">{{ type.label }}</option>
+        }
+      </optgroup>
+      <optgroup label="Otros">
+        @for (type of documentTypeGroups().others; track type.code) {
+          <option [value]="type.code">{{ type.label }}</option>
+        }
+      </optgroup>
+    </select>
+  </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo de documento</th>
+          <th>Número</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (customer of customers(); track customer.id) {
+          <tr>
+            <td>{{ customer.name }}</td>
+            <td><span class="badge badge--primary">{{ customer.document_type_label }}</span></td>
+            <td class="text-mono">{{ formatDocument(customer) }}</td>
+            <td class="text-muted">{{ customer.email || '—' }}</td>
+            <td class="text-muted">{{ customer.phone || '—' }}</td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', customer)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', customer)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando clientes…' : 'No hay clientes' }}</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-customer-form-modal
+  [open]="modal() === 'create' || modal() === 'edit'"
+  [customer]="modal() === 'edit' ? selected() : null"
+  [documentTypes]="documentTypes()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Eliminar cliente"
+  [message]="selected() ? '¿Deseas eliminar a ' + selected()!.name + '?' : '¿Deseas eliminar este cliente?'"
+  (closed)="close()"
+  (confirmed)="remove()"
+/>
