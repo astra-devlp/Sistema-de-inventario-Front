@@ -4,3 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "22.23.3"
+
+# Angular SPA: serve index.html for client-side routes (/login, /productos, ...)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
