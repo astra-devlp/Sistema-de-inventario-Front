@@ -7,6 +7,16 @@ import { AuthUser, LoginResponse } from './auth.model';
 const TOKEN_KEY = 'inventario.token';
 const USER_KEY = 'inventario.user';
 
+/** Lee `exp` (segundos) del JWT sin verificarlo: la firma la valida siempre el backend. */
+function tokenExpiresAt(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -19,7 +29,14 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return this.token() !== null && this.current() !== null;
+    const token = this.token();
+    if (token === null || this.current() === null) return false;
+    const expiresAt = tokenExpiresAt(token);
+    if (expiresAt !== null && expiresAt <= Date.now()) {
+      this.logout();
+      return false;
+    }
+    return true;
   }
 
   isAdmin(): boolean {

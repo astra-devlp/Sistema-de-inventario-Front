@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { httpErrorMessage, AuthService } from '@core/auth/auth.service';
 import { Icon } from '@shared/ui/icon/icon';
 
@@ -12,9 +12,12 @@ import { Icon } from '@shared/ui/icon/icon';
 export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly submitting = signal(false);
-  protected readonly error = signal<string | null>(null);
+  protected readonly error = signal<string | null>(
+    this.route.snapshot.queryParamMap.has('expired') ? 'Tu sesión expiró. Ingresa de nuevo.' : null,
+  );
 
   protected readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),

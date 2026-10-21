@@ -1,21 +1,25 @@
 <app-modal [open]="open()" title="Detalle del producto" size="lg" (closed)="closed.emit()">
-  <dl class="detail-list">
-    <div><dt>Nombre</dt><dd>—</dd></div>
-    <div><dt>Categoría</dt><dd>—</dd></div>
-    <div><dt>SKU</dt><dd class="text-mono">—</dd></div>
-    <div><dt>Marca</dt><dd>—</dd></div>
-    <div><dt>Unidad de medida</dt><dd>—</dd></div>
-    <div><dt>Presentación</dt><dd>—</dd></div>
-    <div><dt>Costo</dt><dd>—</dd></div>
-    <div><dt>Precio de venta</dt><dd>—</dd></div>
-    <div><dt>IVA</dt><dd>—</dd></div>
-    <div><dt>Estado</dt><dd><span class="badge badge--success">Activo</span></dd></div>
-  </dl>
-
-  <div class="barcode-preview mt-4">
-    <div class="barcode-preview__bars"></div>
-    <span class="barcode-preview__code">0000000000000</span>
-  </div>
+  @if (product(); as p) {
+    <dl class="detail-list">
+      <div><dt>Nombre</dt><dd>{{ p.name }}</dd></div>
+      <div><dt>Categoría</dt><dd>{{ categoryName() }}</dd></div>
+      <div><dt>SKU</dt><dd class="text-mono">{{ p.sku }}</dd></div>
+      <div><dt>Marca</dt><dd>{{ p.brand || '—' }}</dd></div>
+      <div><dt>Código de barras</dt><dd class="text-mono">{{ p.barcode || '—' }}</dd></div>
+      <div><dt>Unidad de medida</dt><dd>{{ unitName() }}</dd></div>
+      <div><dt>Presentación</dt><dd>{{ presentationName() }}</dd></div>
+      <div><dt>Costo</dt><dd>{{ formatMoney(p.cost) }}</dd></div>
+      <div><dt>Precio de venta</dt><dd>{{ formatMoney(p.sale_price) }}</dd></div>
+      <div><dt>IVA</dt><dd>{{ taxLabel() }}</dd></div>
+      <div><dt>Precio con IVA</dt><dd>{{ formatMoney(p.price_with_tax) }}</dd></div>
+      <div><dt>Stock mínimo</dt><dd>{{ p.min_stock }}</dd></div>
+      <div>
+        <dt>Estado</dt>
+        <dd><span class="badge" [class.badge--success]="p.is_active">{{ p.is_active ? 'Activo' : 'Inactivo' }}</span></dd>
+      </div>
+      <div><dt>Descripción</dt><dd>{{ p.description || '—' }}</dd></div>
+    </dl>
+  }
 
   <div modal-footer>
     <button type="button" class="btn btn--outline" (click)="closed.emit()">Cerrar</button>
