@@ -9,3 +9,5 @@
 .mb-4 { margin-bottom: var(--space-4); }
 .mt-4 { margin-top: var(--space-4); }
 .stack { display: flex; flex-direction: column; gap: var(--space-4); }
+.qty-in { color: var(--success); }
+.qty-out { color: var(--danger); }

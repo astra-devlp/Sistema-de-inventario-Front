@@ -1,0 +1,74 @@
+<app-page-header title="Bodegas" subtitle="Lugares donde se guarda la mercancía y se llevan las existencias.">
+  <div actions>
+    <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Nueva bodega</button>
+  </div>
+</app-page-header>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar por código o nombre" [value]="query()" (input)="onSearch($event)" />
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (warehouse of warehouses(); track warehouse.id) {
+          <tr>
+            <td class="text-mono">{{ warehouse.code }}</td>
+            <td>{{ warehouse.name }}</td>
+            <td class="text-muted">{{ warehouse.address || '—' }}</td>
+            <td>
+              @if (warehouse.is_active) {
+                <span class="badge badge--success">Activa</span>
+              } @else {
+                <span class="badge">Inactiva</span>
+              }
+            </td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', warehouse)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', warehouse)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando bodegas…' : 'No hay bodegas' }}</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-warehouse-form-modal
+  [open]="modal() === 'create' || modal() === 'edit'"
+  [warehouse]="modal() === 'edit' ? selected() : null"
+  (closed)="close()"
+  (saved)="saved()"
+/>
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Eliminar bodega"
+  [message]="selected() ? '¿Deseas eliminar la bodega ' + selected()!.name + '? Si ya tiene movimientos, desactívala.' : '¿Deseas eliminar esta bodega?'"
+  (closed)="close()"
+  (confirmed)="remove()"
+/>
