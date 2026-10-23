@@ -1,9 +1,13 @@
 <app-page-header title="Unidades y presentaciones" subtitle="Define unidades de medida y empaques (ej: Caja x100).">
   <div actions>
-    <button type="button" class="btn btn--outline" (click)="open('unit-create')"><app-icon name="plus" /> Nueva unidad</button>
-    <button type="button" class="btn btn--primary" (click)="open('pres-create')"><app-icon name="plus" /> Nueva presentación</button>
+    <button type="button" class="btn btn--outline" (click)="openUnit('unit-create')"><app-icon name="plus" /> Nueva unidad</button>
+    <button type="button" class="btn btn--primary" (click)="openPresentation('pres-create')"><app-icon name="plus" /> Nueva presentación</button>
   </div>
 </app-page-header>
+
+@if (error()) {
+  <p class="auth-error mb-4">{{ error() }}</p>
+}
 
 <div class="grid grid--2">
   <section class="card">
@@ -21,14 +25,22 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of placeholderRows; track row) {
+          @for (unit of units(); track unit.id) {
             <tr>
-              <td>—</td>
-              <td class="text-mono text-muted">—</td>
-              <td><span class="badge">—</span></td>
+              <td>{{ unit.name }}</td>
+              <td class="text-mono text-muted">{{ unit.abbreviation }}</td>
+              <td><span class="badge">{{ unit.unit_type }}</span></td>
               <td class="col-actions">
-                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('unit-edit')"><app-icon name="edit" /></button>
-                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="openUnit('unit-edit', unit)"><app-icon name="edit" /></button>
+                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="openUnit('unit-delete', unit)"><app-icon name="trash" /></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4">
+                <div class="empty-state">
+                  <p class="empty-state__title">{{ loading() ? 'Cargando unidades…' : 'No hay unidades' }}</p>
+                </div>
               </td>
             </tr>
           }
@@ -53,15 +65,23 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of placeholderRows; track row) {
+          @for (presentation of presentations(); track presentation.id) {
             <tr>
-              <td>—</td>
-              <td class="text-muted">—</td>
-              <td class="col-num">—</td>
-              <td class="text-muted">—</td>
+              <td>{{ presentation.name }}</td>
+              <td class="text-muted">{{ presentation.packaging }}</td>
+              <td class="col-num">{{ presentation.quantity }}</td>
+              <td class="text-muted">{{ unitLabel(presentation.unit_id) }}</td>
               <td class="col-actions">
-                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('pres-edit')"><app-icon name="edit" /></button>
-                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="openPresentation('pres-edit', presentation)"><app-icon name="edit" /></button>
+                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="openPresentation('pres-delete', presentation)"><app-icon name="trash" /></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <p class="empty-state__title">{{ loading() ? 'Cargando presentaciones…' : 'No hay presentaciones' }}</p>
+                </div>
               </td>
             </tr>
           }
@@ -71,12 +91,23 @@
   </section>
 </div>
 
-<app-unit-form-modal [open]="modal() === 'unit-create' || modal() === 'unit-edit'" [editing]="modal() === 'unit-edit'" (closed)="close()" />
-<app-presentation-form-modal [open]="modal() === 'pres-create' || modal() === 'pres-edit'" [editing]="modal() === 'pres-edit'" (closed)="close()" />
-<app-confirm-modal
-  [open]="modal() === 'delete'"
-  title="Confirmar eliminación"
-  message="¿Deseas eliminar este registro?"
+<app-unit-form-modal
+  [open]="modal() === 'unit-create' || modal() === 'unit-edit'"
+  [unit]="modal() === 'unit-edit' ? selectedUnit() : null"
   (closed)="close()"
-  (confirmed)="close()"
+  (saved)="saved()"
+/>
+<app-presentation-form-modal
+  [open]="modal() === 'pres-create' || modal() === 'pres-edit'"
+  [presentation]="modal() === 'pres-edit' ? selectedPresentation() : null"
+  [units]="units()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
+<app-confirm-modal
+  [open]="modal() === 'unit-delete' || modal() === 'pres-delete'"
+  [title]="modal() === 'unit-delete' ? 'Eliminar unidad' : 'Eliminar presentación'"
+  [message]="'¿Deseas eliminar ' + (selectedUnit()?.name ?? selectedPresentation()?.name ?? 'este registro') + '?'"
+  (closed)="close()"
+  (confirmed)="confirmDelete()"
 />

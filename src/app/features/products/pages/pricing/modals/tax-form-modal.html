@@ -1,22 +1,27 @@
-<app-modal [open]="open()" [title]="editing() ? 'Editar IVA' : 'Nueva tarifa de IVA'" size="sm" (closed)="closed.emit()">
-  <form class="stack" (submit)="$event.preventDefault()">
+<app-modal [open]="open()" [title]="tax() ? 'Editar IVA' : 'Nueva tarifa de IVA'" size="sm" (closed)="closed.emit()">
+  <form class="stack" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error">{{ error() }}</p>
+    }
     <div class="field">
       <label class="label" for="tx-name">Nombre <span class="required">*</span></label>
-      <input id="tx-name" class="input" type="text" placeholder="Ej: IVA general" />
+      <input id="tx-name" class="input" type="text" formControlName="name" placeholder="Ej: IVA general" />
     </div>
     <div class="field">
       <label class="label" for="tx-rate">Porcentaje <span class="required">*</span></label>
       <div class="input-group">
-        <input id="tx-rate" class="input" type="number" min="0" max="100" placeholder="19" />
+        <input id="tx-rate" class="input" type="number" min="0" max="100" step="0.01" formControlName="rate" placeholder="19" />
         <span class="input-group__addon">%</span>
       </div>
     </div>
-    <label class="check"><input type="checkbox" /> Exento de IVA</label>
-    <label class="check"><input type="checkbox" /> Usar por defecto en productos nuevos</label>
+    <label class="check"><input type="checkbox" formControlName="is_exempt" /> Exento de IVA</label>
+    <label class="check"><input type="checkbox" formControlName="is_default" /> Usar por defecto en productos nuevos</label>
   </form>
 
   <div modal-footer>
     <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
-    <button type="button" class="btn btn--primary" (click)="closed.emit()">Guardar IVA</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar IVA' }}
+    </button>
   </div>
 </app-modal>

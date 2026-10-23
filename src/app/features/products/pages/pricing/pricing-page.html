@@ -1,9 +1,13 @@
 <app-page-header title="Precios e IVA" subtitle="Configura listas de precios y tarifas de impuestos.">
   <div actions>
-    <button type="button" class="btn btn--outline" (click)="open('tax-create')"><app-icon name="percent" /> Nueva tarifa de IVA</button>
-    <button type="button" class="btn btn--primary" (click)="open('price-create')"><app-icon name="plus" /> Nuevo precio</button>
+    <button type="button" class="btn btn--outline" (click)="openTax('tax-create')"><app-icon name="percent" /> Nueva tarifa de IVA</button>
+    <button type="button" class="btn btn--primary" (click)="openPrice('price-create')"><app-icon name="plus" /> Nuevo precio</button>
   </div>
 </app-page-header>
+
+@if (error()) {
+  <p class="auth-error mb-4">{{ error() }}</p>
+}
 
 <section class="card mb-4">
   <div class="card__header">
@@ -12,13 +16,13 @@
   <div class="toolbar">
     <div class="toolbar__search">
       <app-icon name="search" />
-      <input class="input" type="search" placeholder="Buscar producto" />
+      <input class="input" type="search" placeholder="Buscar producto" [value]="query()" (input)="onSearch($event)" />
     </div>
-    <select class="select w-auto" aria-label="Lista de precios">
-      <option>Todas las listas</option>
-      <option>Detal</option>
-      <option>Mayorista</option>
-      <option>Distribuidor</option>
+    <select class="select w-auto" aria-label="Lista de precios" (change)="onPriceList($event)">
+      <option value="">Todas las listas</option>
+      @for (list of priceLists; track list) {
+        <option [value]="list">{{ list }}</option>
+      }
     </select>
   </div>
   <div class="table-wrap">
@@ -37,19 +41,27 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of priceRows; track row) {
+        @for (price of prices(); track price.id) {
           <tr>
-            <td>—</td>
-            <td class="text-muted">—</td>
-            <td><span class="badge badge--primary">—</span></td>
-            <td class="col-num">—</td>
-            <td class="col-num">—</td>
-            <td class="col-num">—</td>
-            <td class="text-muted">—</td>
-            <td class="col-num">—</td>
+            <td>{{ productName(price) }}</td>
+            <td class="text-muted">{{ presentationName(price) }}</td>
+            <td><span class="badge badge--primary">{{ price.price_list }}</span></td>
+            <td class="col-num">{{ formatMoney(price.cost) }}</td>
+            <td class="col-num">{{ margin(price) }}</td>
+            <td class="col-num">{{ formatMoney(price.price_without_tax) }}</td>
+            <td class="text-muted">{{ taxLabel(price) }}</td>
+            <td class="col-num">{{ formatMoney(price.price_with_tax) }}</td>
             <td class="col-actions">
-              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('price-edit')"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="openPrice('price-edit', price)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="openPrice('price-delete', price)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando precios…' : 'No hay precios' }}</p>
+              </div>
             </td>
           </tr>
         }
@@ -74,15 +86,23 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of taxRows; track row) {
+        @for (tax of taxes(); track tax.id) {
           <tr>
-            <td>—</td>
-            <td class="col-num">—</td>
-            <td class="text-muted">—</td>
-            <td><span class="badge">—</span></td>
+            <td>{{ tax.name }}</td>
+            <td class="col-num">{{ taxRate(tax) }}</td>
+            <td class="text-muted">{{ tax.is_default ? 'Sí' : '—' }}</td>
+            <td><span class="badge" [class.badge--success]="!tax.is_exempt">{{ tax.status }}</span></td>
             <td class="col-actions">
-              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('tax-edit')"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="openTax('tax-edit', tax)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="openTax('tax-delete', tax)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <p class="empty-state__title">No hay tarifas de IVA</p>
+              </div>
             </td>
           </tr>
         }
@@ -91,12 +111,25 @@
   </div>
 </section>
 
-<app-price-form-modal [open]="modal() === 'price-create' || modal() === 'price-edit'" [editing]="modal() === 'price-edit'" (closed)="close()" />
-<app-tax-form-modal [open]="modal() === 'tax-create' || modal() === 'tax-edit'" [editing]="modal() === 'tax-edit'" (closed)="close()" />
-<app-confirm-modal
-  [open]="modal() === 'delete'"
-  title="Confirmar eliminación"
-  message="¿Deseas eliminar este registro?"
+<app-price-form-modal
+  [open]="modal() === 'price-create' || modal() === 'price-edit'"
+  [price]="modal() === 'price-edit' ? selectedPrice() : null"
+  [products]="products()"
+  [presentations]="presentations()"
+  [taxes]="taxes()"
   (closed)="close()"
-  (confirmed)="close()"
+  (saved)="priceSaved()"
+/>
+<app-tax-form-modal
+  [open]="modal() === 'tax-create' || modal() === 'tax-edit'"
+  [tax]="modal() === 'tax-edit' ? selectedTax() : null"
+  (closed)="close()"
+  (saved)="taxSaved()"
+/>
+<app-confirm-modal
+  [open]="modal() === 'price-delete' || modal() === 'tax-delete'"
+  [title]="modal() === 'price-delete' ? 'Eliminar precio' : 'Eliminar tarifa de IVA'"
+  [message]="modal() === 'price-delete' ? '¿Deseas eliminar este precio?' : '¿Deseas eliminar ' + (selectedTax()?.name ?? 'esta tarifa') + '?'"
+  (closed)="close()"
+  (confirmed)="confirmDelete()"
 />

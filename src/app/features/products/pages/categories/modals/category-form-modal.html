@@ -1,28 +1,36 @@
-<app-modal [open]="open()" [title]="editing() ? 'Editar categoría' : 'Nueva categoría'" (closed)="closed.emit()">
-  <form class="form-grid" (submit)="$event.preventDefault()">
+<app-modal [open]="open()" [title]="category() ? 'Editar categoría' : 'Nueva categoría'" (closed)="closed.emit()">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full">{{ error() }}</p>
+    }
     <div class="field field--full">
       <label class="label" for="cf-name">Nombre <span class="required">*</span></label>
-      <input id="cf-name" class="input" type="text" placeholder="Ej: Bebidas" />
+      <input id="cf-name" class="input" type="text" formControlName="name" placeholder="Ej: Bebidas" />
     </div>
     <div class="field">
       <label class="label" for="cf-code">Código</label>
-      <input id="cf-code" class="input text-mono" type="text" placeholder="Ej: BEB" />
+      <input id="cf-code" class="input text-mono" type="text" formControlName="code" placeholder="Ej: BEB" />
     </div>
     <div class="field">
       <label class="label" for="cf-parent">Categoría padre</label>
-      <select id="cf-parent" class="select">
+      <select id="cf-parent" class="select" formControlName="parent_id">
         <option value="">Ninguna (principal)</option>
+        @for (parent of parents(); track parent.id) {
+          <option [value]="parent.id">{{ parent.name }}</option>
+        }
       </select>
     </div>
     <div class="field field--full">
       <label class="label" for="cf-desc">Descripción</label>
-      <textarea id="cf-desc" class="textarea" placeholder="Descripción opcional"></textarea>
+      <textarea id="cf-desc" class="textarea" formControlName="description" placeholder="Descripción opcional"></textarea>
     </div>
-    <label class="check field--full"><input type="checkbox" checked /> Categoría activa</label>
+    <label class="check field--full"><input type="checkbox" formControlName="is_active" /> Categoría activa</label>
   </form>
 
   <div modal-footer>
     <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
-    <button type="button" class="btn btn--primary" (click)="closed.emit()">Guardar categoría</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar categoría' }}
+    </button>
   </div>
 </app-modal>

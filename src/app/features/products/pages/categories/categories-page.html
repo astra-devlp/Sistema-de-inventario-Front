@@ -8,14 +8,18 @@
   <div class="toolbar">
     <div class="toolbar__search">
       <app-icon name="search" />
-      <input class="input" type="search" placeholder="Buscar categoría" />
+      <input class="input" type="search" placeholder="Buscar categoría" [value]="query()" (input)="onSearch($event)" />
     </div>
-    <select class="select w-auto" aria-label="Estado">
-      <option>Todos los estados</option>
-      <option>Activa</option>
-      <option>Inactiva</option>
+    <select class="select w-auto" aria-label="Estado" (change)="onStatus($event)">
+      <option value="">Todos los estados</option>
+      <option value="true">Activa</option>
+      <option value="false">Inactiva</option>
     </select>
   </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+  }
 
   <div class="table-wrap">
     <table class="table">
@@ -30,16 +34,26 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of placeholderRows; track row) {
+        @for (category of categories(); track category.id) {
           <tr>
-            <td class="text-mono text-muted">—</td>
-            <td>—</td>
-            <td class="text-muted">—</td>
-            <td class="col-num">—</td>
-            <td><span class="badge">—</span></td>
+            <td class="text-mono text-muted">{{ category.code || '—' }}</td>
+            <td>{{ category.name }}</td>
+            <td class="text-muted">{{ parentName(category) }}</td>
+            <td class="col-num">{{ count(category) }}</td>
+            <td>
+              <span class="badge" [class.badge--success]="category.is_active">{{ category.is_active ? 'Activa' : 'Inactiva' }}</span>
+            </td>
             <td class="col-actions">
-              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit')"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', category)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', category)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando categorías…' : 'No hay categorías' }}</p>
+              </div>
             </td>
           </tr>
         }
@@ -48,11 +62,17 @@
   </div>
 </section>
 
-<app-category-form-modal [open]="modal() === 'create' || modal() === 'edit'" [editing]="modal() === 'edit'" (closed)="close()" />
+<app-category-form-modal
+  [open]="modal() === 'create' || modal() === 'edit'"
+  [category]="modal() === 'edit' ? selected() : null"
+  [categories]="allCategories()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
 <app-confirm-modal
   [open]="modal() === 'delete'"
   title="Eliminar categoría"
-  message="¿Deseas eliminar esta categoría?"
+  [message]="selected() ? '¿Deseas eliminar ' + selected()!.name + '?' : '¿Deseas eliminar esta categoría?'"
   (closed)="close()"
-  (confirmed)="close()"
+  (confirmed)="remove()"
 />
