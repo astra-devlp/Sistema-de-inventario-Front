@@ -1,0 +1,112 @@
+<app-page-header title="Existencias" subtitle="Cantidad, stock mínimo y costo promedio de cada producto por bodega.">
+  <div actions>
+    <button type="button" class="btn btn--primary" (click)="openMovement()"><app-icon name="plus" /> Registrar movimiento</button>
+  </div>
+</app-page-header>
+
+<section class="grid grid--4 mb-4">
+  <div class="card stat">
+    <span class="stat__icon"><app-icon name="warehouse" [size]="22" /></span>
+    <div><p class="stat__label">Bodegas activas</p><p class="stat__value">{{ summary()?.warehouses ?? 0 }}</p></div>
+  </div>
+  <div class="card stat">
+    <span class="stat__icon stat__icon--success"><app-icon name="package" [size]="22" /></span>
+    <div><p class="stat__label">Productos con existencia</p><p class="stat__value">{{ summary()?.products_with_stock ?? 0 }}</p></div>
+  </div>
+  <div class="card stat">
+    <span class="stat__icon stat__icon--warning"><app-icon name="alert" [size]="22" /></span>
+    <div><p class="stat__label">Bajo stock mínimo</p><p class="stat__value">{{ summary()?.low_stock ?? 0 }}</p></div>
+  </div>
+  <div class="card stat">
+    <span class="stat__icon stat__icon--info"><app-icon name="dollar" [size]="22" /></span>
+    <div><p class="stat__label">Valor del inventario</p><p class="stat__value">{{ formatMoney(summary()?.total_value) }}</p></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input class="input" type="search" placeholder="Buscar por producto o SKU" [value]="query()" (input)="onSearch($event)" />
+    </div>
+    <select class="select select--auto" aria-label="Bodega" (change)="onWarehouse($event)">
+      <option value="">Todas las bodegas</option>
+      @for (warehouse of warehouses(); track warehouse.id) {
+        <option [value]="warehouse.id">{{ warehouse.name }}</option>
+      }
+    </select>
+    <label class="check">
+      <input type="checkbox" [checked]="lowStock()" (change)="onLowStock($event)" />
+      Solo bajo stock mínimo
+    </label>
+  </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Producto</th>
+          <th>Bodega</th>
+          <th class="col-num">Existencia</th>
+          <th class="col-num">Stock mínimo</th>
+          <th class="col-num">Costo promedio</th>
+          <th class="col-num">Valor total</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (stock of stocks(); track stock.id) {
+          <tr>
+            <td class="text-mono text-muted">{{ stock.product_sku }}</td>
+            <td>{{ stock.product_name }}</td>
+            <td class="text-muted">{{ stock.warehouse_name }}</td>
+            <td class="col-num text-mono">{{ formatQuantity(stock.quantity) }}</td>
+            <td class="col-num text-mono text-muted">{{ formatQuantity(stock.min_stock) }}</td>
+            <td class="col-num">{{ formatMoney(stock.average_cost) }}</td>
+            <td class="col-num">{{ formatMoney(stock.total_value) }}</td>
+            <td>
+              @if (stock.is_low) {
+                <span class="badge badge--warning">Bajo mínimo</span>
+              } @else {
+                <span class="badge badge--success">OK</span>
+              }
+            </td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Registrar entrada" title="Entrada" (click)="openMovement(stock, 'entrada')"><app-icon name="plus" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Registrar salida o ajuste" title="Salida o ajuste" (click)="openMovement(stock, 'salida')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Trasladar a otra bodega" title="Trasladar a otra bodega" (click)="openMovement(stock, 'traslado')"><app-icon name="arrows" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Editar stock mínimo" title="Stock mínimo" (click)="openMinimum(stock)"><app-icon name="edit" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando existencias…' : 'No hay existencias' }}</p>
+                @if (!loading()) {
+                  <p>Registra una entrada para empezar a llevar el inventario.</p>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-movement-form-modal
+  [open]="modal() === 'movement'"
+  [preset]="preset()"
+  [products]="products()"
+  [warehouses]="warehouses()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
+<app-min-stock-modal [open]="modal() === 'minimum'" [stock]="selected()" (closed)="close()" (saved)="saved()" />

@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import {
+  LucideArrowLeftRight,
   LucideBarcode,
   LucideBox,
   LucideCheck,
@@ -16,6 +17,7 @@ import {
   LucideLayers,
   LucideLogOut,
   LucideMenu,
+  LucidePackage,
   LucidePanelLeft,
   LucidePercent,
   LucidePlus,
@@ -30,6 +32,7 @@ import {
   LucideTruck,
   LucideUpload,
   LucideUsers,
+  LucideWarehouse,
   LucideX,
 } from '@lucide/angular';
 
@@ -68,6 +71,9 @@ const ICONS = {
   logout: LucideLogOut,
   filter: LucideFunnel,
   check: LucideCheck,
+  warehouse: LucideWarehouse,
+  package: LucidePackage,
+  arrows: LucideArrowLeftRight,
 } as const;
 
 export type IconName = keyof typeof ICONS;

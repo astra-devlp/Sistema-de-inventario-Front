@@ -47,8 +47,14 @@ export class ProductFormModal {
   protected readonly priceWithTax = computed(() => {
     const price = this.salePrice();
     if (price === null || Number.isNaN(price)) return '';
-    const tax = this.catalogs().taxes.find((t) => String(t.id) === this.taxId());
-    if (!tax) return '';
+    // Al crear, "IVA por defecto" deja tax_id vacío y la API aplica la tarifa marcada como predeterminada.
+    const taxes = this.catalogs().taxes;
+    const tax = this.taxId()
+      ? taxes.find((t) => String(t.id) === this.taxId())
+      : this.product()
+        ? undefined
+        : taxes.find((t) => t.is_default);
+    if (!tax) return this.product() && !this.taxId() ? formatMoney(price) : '';
     return formatMoney(tax.is_exempt ? price : price * (1 + Number(tax.rate) / 100));
   });
 
@@ -95,6 +101,9 @@ export class ProductFormModal {
     }
 
     const raw = this.form.getRawValue();
+    // `required` acepta "   "; la API también lo rechaza, pero aquí se avisa sin ir al servidor.
+    if (!raw.name.trim()) return this.error.set('El nombre es obligatorio');
+    if (!raw.sku.trim()) return this.error.set('El SKU es obligatorio');
     const payload: ProductPayload = {
       name: raw.name.trim(),
       category_id: Number(raw.category_id),

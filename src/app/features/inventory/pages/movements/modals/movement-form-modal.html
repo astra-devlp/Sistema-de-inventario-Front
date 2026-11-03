@@ -1,0 +1,91 @@
+<app-modal [open]="open()" title="Registrar movimiento" (closed)="closed.emit()">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p #errorBox class="auth-error field--full" role="alert">{{ error() }}</p>
+    }
+    <div class="field field--full">
+      <label class="label" for="mv-type">Tipo de movimiento <span class="required">*</span></label>
+      <select id="mv-type" class="select" formControlName="movement_type">
+        @for (option of types; track option.code) {
+          <option [value]="option.code">{{ option.label }}</option>
+        }
+      </select>
+      <span class="hint">{{ typeHint() }}</span>
+    </div>
+    <div class="field field--full">
+      <label class="label" for="mv-product">Producto <span class="required">*</span></label>
+      <select id="mv-product" class="select" formControlName="product_id">
+        <option [ngValue]="null" disabled>Selecciona un producto</option>
+        @for (product of activeProducts(); track product.id) {
+          <option [ngValue]="product.id">{{ product.sku }} — {{ product.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="mv-warehouse">{{ type() === 'traslado' ? 'Bodega origen' : 'Bodega' }} <span class="required">*</span></label>
+      <select id="mv-warehouse" class="select" formControlName="warehouse_id">
+        <option [ngValue]="null" disabled>Selecciona una bodega</option>
+        @for (warehouse of activeWarehouses(); track warehouse.id) {
+          <option [ngValue]="warehouse.id">{{ warehouse.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <span class="label">Existencia actual</span>
+      <p class="stock-current">
+        <strong>{{ formatQuantity(current()?.quantity) }}</strong>
+        <span class="text-muted">· costo prom. {{ formatMoney(current()?.average_cost) }}</span>
+      </p>
+    </div>
+    @if (type() === 'traslado') {
+      <div class="field">
+        <label class="label" for="mv-destination">Bodega destino <span class="required">*</span></label>
+        <select id="mv-destination" class="select" formControlName="to_warehouse_id">
+          <option [ngValue]="null" disabled>Selecciona la bodega destino</option>
+          @for (warehouse of destinationWarehouses(); track warehouse.id) {
+            <option [ngValue]="warehouse.id">{{ warehouse.name }}</option>
+          }
+        </select>
+        @if (!destinationWarehouses().length) {
+          <span class="hint">Necesitas otra bodega activa para trasladar.</span>
+        }
+      </div>
+    }
+    <div class="field">
+      <label class="label" for="mv-quantity">
+        {{ type() === 'ajuste' ? 'Cantidad contada' : 'Cantidad' }} <span class="required">*</span>
+      </label>
+      <input id="mv-quantity" class="input" type="number" min="0" step="any" formControlName="quantity" />
+    </div>
+    @if (type() === 'entrada') {
+      <div class="field">
+        <label class="label" for="mv-cost">Costo unitario <span class="required">*</span></label>
+        <input id="mv-cost" class="input" type="number" min="0" step="any" formControlName="unit_cost" />
+        @if (costWarning(); as warning) {
+          <span class="hint hint--warning">{{ warning }}</span>
+        }
+      </div>
+    }
+    @if (type() === 'ajuste') {
+      <div class="field">
+        <span class="label">Costo</span>
+        <p class="stock-current text-muted">Al costo promedio: {{ formatMoney(current()?.average_cost) }}</p>
+      </div>
+    }
+    <div class="field" [class.field--full]="type() === 'salida' || type() === 'traslado'">
+      <label class="label" for="mv-reference">Referencia</label>
+      <input id="mv-reference" class="input" type="text" maxlength="80" placeholder="Factura, remisión, conteo…" formControlName="reference" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="mv-note">Observación</label>
+      <textarea id="mv-note" class="textarea" maxlength="250" formControlName="note"></textarea>
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : type() === 'traslado' ? 'Registrar traslado' : 'Registrar movimiento' }}
+    </button>
+  </div>
+</app-modal>
