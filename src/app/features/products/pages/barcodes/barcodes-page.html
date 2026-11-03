@@ -1,6 +1,5 @@
 <app-page-header title="Códigos de barras y SKU" subtitle="Administra los identificadores de cada producto y presentación.">
   <div actions>
-    <button type="button" class="btn btn--outline"><app-icon name="printer" /> Imprimir etiquetas</button>
     <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Asignar código</button>
   </div>
 </app-page-header>
@@ -9,17 +8,19 @@
   <div class="toolbar">
     <div class="toolbar__search">
       <app-icon name="search" />
-      <input class="input" type="search" placeholder="Buscar por SKU o código de barras" />
+      <input class="input" type="search" placeholder="Buscar por SKU o código de barras" [value]="query()" (input)="onSearch($event)" />
     </div>
-    <select class="select w-auto" aria-label="Tipo de código">
-      <option>Todos los tipos</option>
-      <option>EAN-13</option>
-      <option>EAN-8</option>
-      <option>UPC-A</option>
-      <option>Code 128</option>
-      <option>QR</option>
+    <select class="select w-auto" aria-label="Tipo de código" (change)="onType($event)">
+      <option value="">Todos los tipos</option>
+      @for (type of barcodeTypes; track type) {
+        <option [value]="type">{{ type }}</option>
+      }
     </select>
   </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+  }
 
   <div class="table-wrap">
     <table class="table">
@@ -34,16 +35,24 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of placeholderRows; track row) {
+        @for (barcode of barcodes(); track barcode.id) {
           <tr>
-            <td>—</td>
-            <td class="text-mono text-muted">—</td>
-            <td class="text-mono text-muted">—</td>
-            <td><span class="badge badge--primary">—</span></td>
-            <td class="text-muted">—</td>
+            <td>{{ productName(barcode) }}</td>
+            <td class="text-mono text-muted">{{ barcode.sku }}</td>
+            <td class="text-mono">{{ barcode.code || '—' }}</td>
+            <td><span class="badge badge--primary">{{ barcode.code_type }}</span></td>
+            <td class="text-muted">{{ presentationName(barcode) }}</td>
             <td class="col-actions">
-              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit')"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete')"><app-icon name="trash" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', barcode)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', barcode)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando códigos…' : 'No hay códigos asignados' }}</p>
+              </div>
             </td>
           </tr>
         }
@@ -52,11 +61,18 @@
   </div>
 </section>
 
-<app-barcode-form-modal [open]="modal() === 'create' || modal() === 'edit'" [editing]="modal() === 'edit'" (closed)="close()" />
+<app-barcode-form-modal
+  [open]="modal() === 'create' || modal() === 'edit'"
+  [barcode]="modal() === 'edit' ? selected() : null"
+  [products]="products()"
+  [presentations]="presentations()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
 <app-confirm-modal
   [open]="modal() === 'delete'"
   title="Eliminar código"
-  message="¿Deseas eliminar este código?"
+  [message]="selected() ? '¿Deseas eliminar el código ' + (selected()!.code || selected()!.sku) + '?' : '¿Deseas eliminar este código?'"
   (closed)="close()"
-  (confirmed)="close()"
+  (confirmed)="remove()"
 />

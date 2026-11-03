@@ -1,4 +1,4 @@
-<app-page-header title="Movimientos" subtitle="Entradas, salidas y ajustes con su efecto en la existencia y el costo promedio.">
+<app-page-header title="Movimientos" subtitle="Entradas, salidas, ajustes y traslados con su efecto en la existencia y el costo promedio.">
   <div actions>
     <button type="button" class="btn btn--primary" (click)="formOpen.set(true)"><app-icon name="plus" /> Nuevo movimiento</button>
   </div>
@@ -50,7 +50,14 @@
               {{ movement.product_name }}
               <span class="text-mono text-muted">· {{ movement.product_sku }}</span>
             </td>
-            <td class="text-muted">{{ movement.warehouse_name }}</td>
+            <td class="text-muted">
+              {{ movement.warehouse_name }}
+              @if (movement.counterpart_warehouse_name) {
+                <span [title]="toNumber(movement.quantity) < 0 ? 'Hacia esta bodega' : 'Desde esta bodega'">
+                  {{ toNumber(movement.quantity) < 0 ? '→' : '←' }} {{ movement.counterpart_warehouse_name }}
+                </span>
+              }
+            </td>
             <td class="col-num text-mono" [class.qty-in]="toNumber(movement.quantity) > 0" [class.qty-out]="toNumber(movement.quantity) < 0">
               {{ formatSignedQuantity(movement.quantity) }}
             </td>

@@ -95,3 +95,4 @@
 }
 
 .stock-current { padding: 9px 0; }
+.hint--warning { color: var(--warning); }

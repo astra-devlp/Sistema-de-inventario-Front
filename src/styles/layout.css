@@ -13,8 +13,14 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  /* Sin barra visible: el menú cabe en pantallas comunes y en las muy bajas sigue bajando con la rueda. */
+  scrollbar-width: none;
   z-index: 30;
   transition: transform var(--transition), width var(--transition);
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar__brand {
@@ -39,14 +45,14 @@
 }
 
 .sidebar__nav {
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sidebar__section {
-  padding: var(--space-4) var(--space-3) var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-1);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -58,7 +64,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 9px var(--space-3);
+  padding: 7px var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--sidebar-text);
   transition: background var(--transition), color var(--transition);
@@ -79,7 +85,7 @@
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: 9px var(--space-3);
+  padding: 7px var(--space-3);
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;

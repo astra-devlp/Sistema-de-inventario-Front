@@ -1,43 +1,54 @@
-<app-modal [open]="open()" [title]="editing() ? 'Editar código' : 'Asignar código'" (closed)="closed.emit()">
-  <form class="form-grid" (submit)="$event.preventDefault()">
+<app-modal [open]="open()" [title]="barcode() ? 'Editar código' : 'Asignar código'" (closed)="closed.emit()">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full" role="alert">{{ error() }}</p>
+    }
     <div class="field field--full">
       <label class="label" for="bf-product">Producto <span class="required">*</span></label>
-      <select id="bf-product" class="select">
+      <select id="bf-product" class="select" formControlName="product_id">
         <option value="">Seleccionar producto</option>
+        @for (product of productOptions(); track product.id) {
+          <option [value]="product.id">{{ product.sku }} — {{ product.name }}</option>
+        }
       </select>
     </div>
     <div class="field">
       <label class="label" for="bf-sku">SKU <span class="required">*</span></label>
-      <input id="bf-sku" class="input text-mono" type="text" placeholder="Ej: ACE-OLI-500" />
+      <input id="bf-sku" class="input text-mono" type="text" maxlength="80" placeholder="Ej: ACE-OLI-500" formControlName="sku" />
     </div>
     <div class="field">
       <label class="label" for="bf-type">Tipo de código</label>
-      <select id="bf-type" class="select">
-        <option>EAN-13</option>
-        <option>EAN-8</option>
-        <option>UPC-A</option>
-        <option>Code 128</option>
-        <option>QR</option>
+      <select id="bf-type" class="select" formControlName="code_type">
+        @for (type of barcodeTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+        }
       </select>
     </div>
     <div class="field field--full">
       <label class="label" for="bf-code">Código de barras</label>
       <div class="input-group">
-        <input id="bf-code" class="input text-mono" type="text" placeholder="7701234567890" />
-        <button type="button" class="btn btn--outline">Generar</button>
+        <input id="bf-code" class="input text-mono" type="text" maxlength="80" placeholder="7701234567890" formControlName="code" />
+        <button type="button" class="btn btn--outline" [disabled]="generating()" (click)="generate()">
+          {{ generating() ? 'Generando…' : 'Generar' }}
+        </button>
       </div>
-      <span class="hint">Puedes escanear el código o generarlo automáticamente.</span>
+      <span class="hint">Puedes escanear el código o generarlo automáticamente según el tipo.</span>
     </div>
     <div class="field field--full">
       <label class="label" for="bf-pres">Presentación asociada</label>
-      <select id="bf-pres" class="select">
+      <select id="bf-pres" class="select" formControlName="presentation_id">
         <option value="">Unidad suelta</option>
+        @for (presentation of presentations(); track presentation.id) {
+          <option [value]="presentation.id">{{ presentation.name }}</option>
+        }
       </select>
     </div>
   </form>
 
   <div modal-footer>
     <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
-    <button type="button" class="btn btn--primary" (click)="closed.emit()">Guardar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </button>
   </div>
 </app-modal>

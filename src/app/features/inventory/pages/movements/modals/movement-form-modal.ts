@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { httpErrorMessage } from '@core/auth/auth.service';
@@ -11,11 +11,15 @@ import {
   MovementType,
   ProductOption,
   Stock,
+  TransferPayload,
   Warehouse,
   formatMoney,
   formatQuantity,
   toNumber,
 } from '../../../inventory.model';
+
+/** Diferencia (50%) frente al costo de referencia a partir de la cual se pide confirmar una entrada. */
+const UNUSUAL_COST_CHANGE = 0.5;
 
 @Component({
   selector: 'app-movement-form-modal',
@@ -37,10 +41,36 @@ export class MovementFormModal {
   protected readonly activeWarehouses = computed(() => this.warehouses().filter((warehouse) => warehouse.is_active));
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
+  private readonly errorBox = viewChild<ElementRef<HTMLElement>>('errorBox');
   protected readonly type = signal<MovementType>('entrada');
   protected readonly typeHint = computed(() => MOVEMENT_TYPES.find((item) => item.code === this.type())?.hint ?? '');
+  /** Bodega elegida (origen en un traslado); el destino no puede ser la misma. */
+  protected readonly originId = signal<number | null>(null);
+  protected readonly destinationWarehouses = computed(() =>
+    this.activeWarehouses().filter((warehouse) => warehouse.id !== this.originId()),
+  );
   /** Existencia actual del producto en la bodega elegida; null si aún no tiene. */
   protected readonly current = signal<Stock | null>(null);
+  /** Costo escrito en una entrada y costo del producto elegido, para detectar un dígito de más o de menos. */
+  private readonly costValue = signal<number | null>(null);
+  private readonly productCost = signal<number | null>(null);
+  /** El usuario ya vio el aviso de costo inusual y decidió guardar igual. */
+  private costConfirmed = false;
+  /** Costo de referencia: el promedio si ya hay existencia; si no, el costo del producto. */
+  private readonly referenceCost = computed(() => {
+    const stock = this.current();
+    if (stock && toNumber(stock.quantity) > 0) return toNumber(stock.average_cost);
+    return this.productCost();
+  });
+  protected readonly costWarning = computed(() => {
+    const cost = this.costValue();
+    const reference = this.referenceCost();
+    if (this.type() !== 'entrada' || cost === null || !reference) return null;
+    const change = (cost - reference) / reference;
+    if (Math.abs(change) < UNUSUAL_COST_CHANGE) return null;
+    const direction = change > 0 ? 'mayor' : 'menor';
+    return `Este costo es ${Math.round(Math.abs(change) * 100)}% ${direction} que el de referencia (${formatMoney(reference)}). Revisa que no sobre o falte un dígito.`;
+  });
   protected readonly formatQuantity = formatQuantity;
   protected readonly formatMoney = formatMoney;
 
@@ -48,6 +78,7 @@ export class MovementFormModal {
     movement_type: new FormControl<MovementType>('entrada', { nonNullable: true }),
     product_id: new FormControl<number | null>(null, { validators: [Validators.required] }),
     warehouse_id: new FormControl<number | null>(null, { validators: [Validators.required] }),
+    to_warehouse_id: new FormControl<number | null>(null),
     quantity: new FormControl<number | null>(null, { validators: [Validators.required, Validators.min(0)] }),
     unit_cost: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
     reference: new FormControl('', { nonNullable: true }),
@@ -55,23 +86,40 @@ export class MovementFormModal {
   });
 
   constructor() {
+    // Reinicia el formulario solo al abrirlo. Lo demás va en `untracked`: si el efecto leyera `type()`
+    // u otra señal, cambiar el tipo en el desplegable volvería a ejecutarlo y regresaría todo a "Entrada".
     effect(() => {
       if (!this.open()) return;
       const preset = this.preset();
-      this.error.set(null);
-      this.current.set(null);
-      this.type.set(preset?.movement_type ?? 'entrada');
-      this.form.reset({
-        movement_type: preset?.movement_type ?? 'entrada',
-        product_id: preset?.product_id ?? null,
-        warehouse_id: preset?.warehouse_id ?? this.activeWarehouses()[0]?.id ?? null,
-        quantity: null,
-        unit_cost: null,
-        reference: '',
-        note: '',
+      untracked(() => {
+        this.error.set(null);
+        this.current.set(null);
+        this.type.set(preset?.movement_type ?? 'entrada');
+        const warehouseId = preset?.warehouse_id ?? this.activeWarehouses()[0]?.id ?? null;
+        this.originId.set(warehouseId);
+        this.form.reset({
+          movement_type: preset?.movement_type ?? 'entrada',
+          product_id: preset?.product_id ?? null,
+          warehouse_id: warehouseId,
+          to_warehouse_id: null,
+          quantity: null,
+          unit_cost: null,
+          reference: '',
+          note: '',
+        });
+        this.prefillCost();
+        this.loadCurrent();
       });
-      this.prefillCost();
-      this.loadCurrent();
+    });
+
+    // El error se muestra arriba del formulario; si el usuario bajó para llenar la cantidad, lo llevamos a la vista.
+    effect(() => {
+      if (this.error()) this.errorBox()?.nativeElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+
+    this.form.controls.unit_cost.valueChanges.pipe(takeUntilDestroyed()).subscribe((cost) => {
+      this.costValue.set(cost === null || cost === undefined || `${cost}` === '' ? null : Number(cost));
+      this.costConfirmed = false;
     });
 
     this.form.controls.movement_type.valueChanges.pipe(takeUntilDestroyed()).subscribe((type) => {
@@ -82,13 +130,21 @@ export class MovementFormModal {
       this.prefillCost();
       this.loadCurrent();
     });
-    this.form.controls.warehouse_id.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.loadCurrent());
+    this.form.controls.warehouse_id.valueChanges.pipe(takeUntilDestroyed()).subscribe((warehouseId) => {
+      this.originId.set(warehouseId === null ? null : Number(warehouseId));
+      if (Number(this.form.controls.to_warehouse_id.value) === Number(warehouseId)) {
+        this.form.controls.to_warehouse_id.setValue(null);
+      }
+      this.loadCurrent();
+    });
   }
 
   protected submit(): void {
     const raw = this.form.getRawValue();
+    const transfer = this.type() === 'traslado';
     if (!raw.product_id) return this.error.set('Selecciona el producto');
-    if (!raw.warehouse_id) return this.error.set('Selecciona la bodega');
+    if (!raw.warehouse_id) return this.error.set(transfer ? 'Selecciona la bodega de origen' : 'Selecciona la bodega');
+    if (transfer && !raw.to_warehouse_id) return this.error.set('Selecciona la bodega de destino');
     if (raw.quantity === null || raw.quantity === undefined || this.form.controls.quantity.invalid) {
       return this.error.set(this.type() === 'ajuste' ? 'Escribe la cantidad contada' : 'Escribe la cantidad');
     }
@@ -98,8 +154,25 @@ export class MovementFormModal {
       return this.error.set('El costo unitario es obligatorio en una entrada');
     }
     const available = toNumber(this.current()?.quantity);
-    if (this.type() === 'salida' && raw.quantity > available) {
+    if ((this.type() === 'salida' || transfer) && raw.quantity > available) {
       return this.error.set(`Existencia insuficiente. Disponible: ${formatQuantity(available)}`);
+    }
+    // Un costo muy distinto al de referencia suele ser un dígito mal escrito: se pide un segundo clic.
+    if (this.costWarning() && !this.costConfirmed) {
+      this.costConfirmed = true;
+      return this.error.set(`${this.costWarning()} Si es correcto, vuelve a dar clic en Registrar movimiento.`);
+    }
+
+    if (transfer) {
+      this.submitTransfer({
+        product_id: Number(raw.product_id),
+        from_warehouse_id: Number(raw.warehouse_id),
+        to_warehouse_id: Number(raw.to_warehouse_id),
+        quantity: Number(raw.quantity),
+        reference: raw.reference.trim() || null,
+        note: raw.note.trim() || null,
+      });
+      return;
     }
 
     const payload: MovementPayload = {
@@ -107,7 +180,8 @@ export class MovementFormModal {
       product_id: Number(raw.product_id),
       warehouse_id: Number(raw.warehouse_id),
       quantity: Number(raw.quantity),
-      unit_cost: this.type() === 'salida' || raw.unit_cost === null ? null : Number(raw.unit_cost),
+      // Solo la entrada lleva costo; salidas y ajustes van al costo promedio (la API rechaza otro costo).
+      unit_cost: this.type() === 'entrada' && raw.unit_cost !== null ? Number(raw.unit_cost) : null,
       reference: raw.reference.trim() || null,
       note: raw.note.trim() || null,
     };
@@ -126,20 +200,26 @@ export class MovementFormModal {
     });
   }
 
-  /** En una entrada se propone el costo del producto; en un ajuste, el costo promedio vigente. */
+  private submitTransfer(payload: TransferPayload): void {
+    this.submitting.set(true);
+    this.error.set(null);
+    this.api.registerTransfer(payload).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.saved.emit();
+      },
+      error: (err: unknown) => {
+        this.submitting.set(false);
+        this.error.set(httpErrorMessage(err, 'No se pudo registrar el traslado'));
+      },
+    });
+  }
+
+  /** Solo la entrada pide costo, y se propone el costo del producto. */
   private prefillCost(): void {
-    const control = this.form.controls.unit_cost;
-    if (this.type() === 'salida') {
-      control.setValue(null, { emitEvent: false });
-      return;
-    }
-    if (this.type() === 'ajuste') {
-      const average = this.current() ? toNumber(this.current()!.average_cost) : null;
-      control.setValue(average, { emitEvent: false });
-      return;
-    }
     const product = this.products().find((item) => item.id === Number(this.form.controls.product_id.value));
-    control.setValue(product?.cost != null ? toNumber(product.cost) : null, { emitEvent: false });
+    this.productCost.set(product?.cost != null ? toNumber(product.cost) : null);
+    this.form.controls.unit_cost.setValue(this.type() === 'entrada' ? this.productCost() : null);
   }
 
   private loadCurrent(): void {
@@ -150,7 +230,6 @@ export class MovementFormModal {
     this.api.stock({ warehouseId }).subscribe({
       next: (stocks) => {
         this.current.set(stocks.find((stock) => stock.product_id === productId) ?? null);
-        if (this.type() === 'ajuste') this.prefillCost();
       },
     });
   }

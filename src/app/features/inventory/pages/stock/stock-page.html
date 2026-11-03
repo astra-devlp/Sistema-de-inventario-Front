@@ -79,7 +79,8 @@
             </td>
             <td class="col-actions">
               <button type="button" class="btn btn--icon" aria-label="Registrar entrada" title="Entrada" (click)="openMovement(stock, 'entrada')"><app-icon name="plus" /></button>
-              <button type="button" class="btn btn--icon" aria-label="Registrar movimiento" title="Salida o ajuste" (click)="openMovement(stock, 'salida')"><app-icon name="arrows" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Registrar salida o ajuste" title="Salida o ajuste" (click)="openMovement(stock, 'salida')"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon" aria-label="Trasladar a otra bodega" title="Trasladar a otra bodega" (click)="openMovement(stock, 'traslado')"><app-icon name="arrows" /></button>
               <button type="button" class="btn btn--icon" aria-label="Editar stock mínimo" title="Stock mínimo" (click)="openMinimum(stock)"><app-icon name="edit" /></button>
             </td>
           </tr>

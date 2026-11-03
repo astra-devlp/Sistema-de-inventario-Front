@@ -30,7 +30,7 @@ export interface Stock {
   is_low: boolean;
 }
 
-export type MovementType = 'entrada' | 'salida' | 'ajuste';
+export type MovementType = 'entrada' | 'salida' | 'ajuste' | 'traslado';
 
 export interface Movement {
   id: number;
@@ -49,6 +49,9 @@ export interface Movement {
   reference: string | null;
   note: string | null;
   user_name: string | null;
+  /** Solo en traslados: la otra bodega (destino si la cantidad es negativa, origen si es positiva). */
+  counterpart_warehouse_id: number | null;
+  counterpart_warehouse_name: string | null;
   created_at: string;
 }
 
@@ -60,6 +63,20 @@ export interface MovementPayload {
   unit_cost: number | null;
   reference: string | null;
   note: string | null;
+}
+
+export interface TransferPayload {
+  product_id: number;
+  from_warehouse_id: number;
+  to_warehouse_id: number;
+  quantity: number;
+  reference: string | null;
+  note: string | null;
+}
+
+export interface Transfer {
+  outgoing: Movement;
+  incoming: Movement;
 }
 
 export interface MinimumStockPayload {
@@ -94,13 +111,19 @@ export interface MovementPreset {
 export const MOVEMENT_TYPES: { code: MovementType; label: string; hint: string }[] = [
   { code: 'entrada', label: 'Entrada', hint: 'Suma existencia y recalcula el costo promedio.' },
   { code: 'salida', label: 'Salida', hint: 'Resta existencia al costo promedio vigente.' },
-  { code: 'ajuste', label: 'Ajuste', hint: 'Escribe la cantidad contada; se registra la diferencia.' },
+  {
+    code: 'ajuste',
+    label: 'Ajuste',
+    hint: 'Escribe cuántas unidades contaste (no cuántas quitas). La diferencia se registra al costo promedio.',
+  },
+  { code: 'traslado', label: 'Traslado', hint: 'Mueve existencia a otra bodega al costo promedio de la bodega de origen.' },
 ];
 
 export const MOVEMENT_BADGE: Record<MovementType, string> = {
   entrada: 'badge--success',
   salida: 'badge--danger',
   ajuste: 'badge--info',
+  traslado: 'badge--primary',
 };
 
 export function toNumber(value: DecimalValue | null | undefined): number {

@@ -10,6 +10,8 @@ import {
   MovementType,
   ProductOption,
   Stock,
+  Transfer,
+  TransferPayload,
   Warehouse,
   WarehousePayload,
 } from './inventory.model';
@@ -72,6 +74,10 @@ export class InventoryApi {
 
   registerMovement(payload: MovementPayload): Observable<Movement> {
     return this.http.post<Movement>(`${API_URL}/inventory/movements`, payload);
+  }
+
+  registerTransfer(payload: TransferPayload): Observable<Transfer> {
+    return this.http.post<Transfer>(`${API_URL}/inventory/transfers`, payload);
   }
 
   products(): Observable<ProductOption[]> {
