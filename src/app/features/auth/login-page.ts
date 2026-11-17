@@ -2,11 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { httpErrorMessage, AuthService } from '@core/auth/auth.service';
-import { Icon } from '@shared/ui/icon/icon';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule],
   templateUrl: './login-page.html',
 })
 export class LoginPage {

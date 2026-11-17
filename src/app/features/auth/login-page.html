@@ -1,14 +1,15 @@
 <section class="auth-screen">
-  <div class="auth-card">
-    <div class="auth-brand">
-      <span class="auth-brand__logo"><app-icon name="box" /></span>
-      <div>
-        <p class="auth-brand__title">Inventario</p>
-        <p class="auth-brand__subtitle">Ingresa para continuar</p>
-      </div>
+  <div class="auth-layout">
+    <div class="auth-intro">
+      <p class="auth-kicker">Astra Dev</p>
+      <h1 class="auth-title">Inventario</h1>
+      <p class="auth-lede">Entra para ver productos, existencias y movimientos de tu negocio.</p>
     </div>
 
-    <form class="auth-form" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    <form class="auth-card" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+      <h2 class="auth-card__title">Iniciar sesión</h2>
+      <p class="auth-card__hint">Usa el correo y la contraseña de tu cuenta.</p>
+
       @if (error()) {
         <p class="auth-error">{{ error() }}</p>
       }
@@ -20,10 +21,16 @@
 
       <div class="field">
         <label class="label" for="auth-password">Contraseña <span class="required">*</span></label>
-        <input id="auth-password" class="input" type="password" formControlName="password" autocomplete="current-password" />
+        <input
+          id="auth-password"
+          class="input"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+        />
       </div>
 
-      <button type="submit" class="btn btn--primary" [disabled]="submitting()">
+      <button type="submit" class="auth-submit" [disabled]="submitting()">
         {{ submitting() ? 'Espera…' : 'Entrar' }}
       </button>
     </form>
