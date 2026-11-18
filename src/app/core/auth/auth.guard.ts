@@ -1,11 +1,23 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from './auth.service';
+import { AuthService, PLAN_EXPIRED_PATH } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  if (auth.isLoggedIn()) return true;
-  return inject(Router).createUrlTree(['/login']);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) return router.createUrlTree(['/login']);
+  // Con el plan vencido no se opera ningún módulo: solo la pantalla de renovación.
+  if (auth.planExpired()) return router.createUrlTree([PLAN_EXPIRED_PATH]);
+  return true;
+};
+
+/** Pantalla de renovación: solo con sesión y con el plan vencido. */
+export const planExpiredGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) return router.createUrlTree(['/login']);
+  if (auth.planExpired()) return true;
+  return router.createUrlTree([auth.homePath()]);
 };
 
 export const guestGuard: CanActivateFn = () => {

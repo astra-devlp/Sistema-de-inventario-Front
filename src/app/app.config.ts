@@ -4,7 +4,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
@@ -21,13 +21,8 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled',
       }),
     ),
-    provideHttpClient(
-      withInterceptors([authInterceptor]),
-      // Doble envío anti-CSRF: Angular copia la cookie de la API en esta cabecera
-      // en cada POST/PUT/PATCH/DELETE a rutas relativas (/api/...).
-      withXsrfConfiguration({ cookieName: 'inventario_csrf', headerName: 'X-CSRF-Token' }),
-    ),
-    // Antes de enrutar se pregunta a la API si hay sesión (cookie httpOnly).
+    provideHttpClient(withInterceptors([authInterceptor])),
+    // Antes de enrutar se valida con la API el token guardado en sessionStorage.
     provideAppInitializer(() => inject(AuthService).restore()),
   ],
 };

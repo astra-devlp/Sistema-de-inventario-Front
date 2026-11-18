@@ -16,6 +16,8 @@ export interface AuthUser {
   plan: ClientPlan | null;
   plan_starts_at: string | null;
   plan_ends_at: string | null;
+  /** Empresa del usuario; `null` para el administrador de plataforma. */
+  company_id: number | null;
   /** Solo rol Usuario: id del Cliente dueño del negocio. */
   account_owner_id: number | null;
   /** Solo rol Cliente: datos del local en facturas. */

@@ -1,0 +1,52 @@
+<section class="fixed inset-0 overflow-y-auto bg-background font-body-md text-on-surface antialiased">
+  <div class="mx-auto flex min-h-full w-full max-w-[520px] flex-col justify-center gap-6 px-margin-mobile py-10">
+    <img
+      src="brand/logo-horizontal.png"
+      alt="Astra Dev"
+      class="brand-invert-light h-10 max-w-[220px] self-start"
+    />
+
+    <div class="flex flex-col gap-4 rounded-xl border border-outline-variant bg-surface-container p-6">
+      <h1 class="font-display text-[1.5rem] font-semibold tracking-[-0.02em] text-primary">
+        El plan de la empresa venció
+      </h1>
+      <p class="text-body-md text-on-surface-variant">
+        Contacta a Astra para renovarlo. Mientras tanto no se puede operar la caja ni el resto del sistema; tu información
+        no se pierde y los turnos abiertos se cierran con normalidad al renovar.
+      </p>
+
+      @if (company(); as c) {
+        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-body-sm">
+          <dt class="text-on-surface-variant">Empresa</dt>
+          <dd class="text-primary">{{ c.name }}</dd>
+          <dt class="text-on-surface-variant">Venció</dt>
+          <dd class="text-primary">{{ formatDate(c.plan_expires_at) }}</dd>
+          @if (c.phone) {
+            <dt class="text-on-surface-variant">Teléfono</dt>
+            <dd class="text-primary">{{ c.phone }}</dd>
+          }
+          @if (c.city) {
+            <dt class="text-on-surface-variant">Ciudad</dt>
+            <dd class="text-primary">{{ c.city }}</dd>
+          }
+        </dl>
+      }
+
+      @if (message()) {
+        <p class="rounded-lg bg-error-container px-3 py-2.5 text-body-sm text-on-error-container">{{ message() }}</p>
+      }
+
+      <div class="flex flex-wrap gap-3">
+        <button
+          class="btn-brand inline-flex min-h-12 items-center justify-center rounded-lg border-0 px-6 font-body-md text-body-md font-semibold"
+          type="button"
+          [disabled]="checking()"
+          (click)="retry()"
+        >
+          {{ checking() ? 'Consultando…' : 'Ya renové, reintentar' }}
+        </button>
+        <button class="btn btn--outline" type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+</section>

@@ -5,6 +5,7 @@ import {
   clientGuard,
   guestGuard,
   homeRedirectGuard,
+  planExpiredGuard,
 } from './core/auth/auth.guard';
 import { MainLayout } from './core/layout/main-layout/main-layout';
 
@@ -13,6 +14,11 @@ export const routes: Routes = [
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/login-page').then((m) => m.LoginPage),
+  },
+  {
+    path: 'plan-vencido',
+    canActivate: [planExpiredGuard],
+    loadComponent: () => import('./features/plan/plan-expired-page').then((m) => m.PlanExpiredPage),
   },
   {
     path: '',

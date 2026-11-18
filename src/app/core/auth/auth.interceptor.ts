@@ -2,29 +2,38 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { isPlanExpired } from '@core/api/api-error';
 import { API_URL } from '@core/api/api-url';
-import { AuthService, SKIP_SESSION_REDIRECT } from './auth.service';
+import { SKIP_SESSION_REDIRECT } from '@core/api/http-context';
+import { AuthService, PLAN_EXPIRED_PATH } from './auth.service';
+import { readToken } from './token-storage';
 
 /**
- * La cookie de sesión la envía el navegador solo a nuestra API (mismo sitio, vía proxy).
- * La cabecera anti-CSRF la agrega Angular (withXsrfConfiguration en app.config).
+ * Agrega `Authorization: Bearer` a las peticiones a nuestra API (nunca a otras URL) y decide qué hacer con los errores:
+ * - 401: sesión vencida o token inválido → se limpia y se vuelve al login. Es el único que cierra sesión.
+ * - 403 con `detail.code === 'plan_vencido'`: la sesión sigue válida → pantalla de renovación del plan.
+ * - cualquier otro 403 (rol insuficiente, autorización no válida): no toca la sesión; cada pantalla muestra el detalle.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!req.url.startsWith(`${API_URL}/`)) return next(req);
+
   const auth = inject(AuthService);
   const router = inject(Router);
-  const isApi = req.url.startsWith(API_URL);
-  const isLogin = req.url.includes('/users/login');
-  const apiReq = isApi ? req.clone({ withCredentials: true }) : req;
+  const isLogin = req.url === `${API_URL}/users/login`;
+  const token = isLogin ? null : readToken();
+  const apiReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
   return next(apiReq).pipe(
     catchError((error: unknown) => {
-      const redirect = isApi && !isLogin && !req.context.get(SKIP_SESSION_REDIRECT);
-      if (redirect && error instanceof HttpErrorResponse && error.status === 401) {
-        // Sesión vencida o cookie inválida: se limpia y se vuelve al login.
-        auth.clearSession();
-        void router.navigate(['/login'], { queryParams: { expired: 1 } });
+      if (error instanceof HttpErrorResponse) {
+        if (error.status === 401 && !isLogin && !req.context.get(SKIP_SESSION_REDIRECT)) {
+          auth.clearSession();
+          void router.navigate(['/login'], { queryParams: { expired: 1 } });
+        } else if (isPlanExpired(error)) {
+          auth.setPlanExpired(true);
+          if (!router.url.startsWith(PLAN_EXPIRED_PATH)) void router.navigateByUrl(PLAN_EXPIRED_PATH);
+        }
       }
-      // 403 no cierra la sesión: el usuario sigue autenticado pero sin permiso; cada pantalla muestra el detalle.
       return throwError(() => error);
     }),
   );
