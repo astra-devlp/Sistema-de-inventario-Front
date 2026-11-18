@@ -1,0 +1,84 @@
+<section class="card">
+  <div class="toolbar" style="gap: 8px">
+    <p class="hint" style="margin: 0">
+      Se carga una sola vez por producto y sede; después se corrige con un ajuste. Si una fila falla, no se guarda nada.
+    </p>
+  </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px" role="alert">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Error</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track $index) {
+          <tr [style.background]="rowErrors().has($index) ? 'rgba(239, 68, 68, 0.08)' : null">
+            <td class="text-muted">{{ $index + 1 }}</td>
+            <td>
+              <select class="select" [attr.aria-label]="'Producto fila ' + ($index + 1)" (change)="setProduct($index, $event)">
+                <option value="">Elige un producto</option>
+                @for (product of products(); track product.id) {
+                  <option [value]="product.id" [selected]="product.id === row.productId">{{ product.name }}</option>
+                }
+              </select>
+            </td>
+            <td>
+              <input
+                class="input"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [attr.aria-label]="'Cantidad fila ' + ($index + 1)"
+                [value]="row.quantity"
+                (input)="setQuantity($index, $event)"
+              />
+              @if (unitOf(row.productId); as unit) {
+                <span class="hint" style="display: block">{{ unit.abbreviation }} · {{ unit.unit_type === 'Cantidad' ? 'enteras' : 'hasta 3 decimales' }}</span>
+              }
+            </td>
+            <td class="text-danger" style="min-width: 260px; white-space: normal" role="alert">{{ rowErrors().get($index) }}</td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Quitar fila" (click)="removeRow($index)">
+                <app-icon name="x" />
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="toolbar" style="gap: 8px">
+    <button type="button" class="btn btn--outline" (click)="addRow()">Agregar fila</button>
+    <button type="button" class="btn btn--outline" [disabled]="withoutStock().length === 0" (click)="addWithoutStock()">
+      Agregar productos sin stock ({{ withoutStock().length }})
+    </button>
+    <input
+      class="input"
+      type="text"
+      maxlength="500"
+      placeholder="Motivo del lote (opcional)"
+      aria-label="Motivo del lote"
+      [value]="reason()"
+      (input)="onReason($event)"
+    />
+    <button
+      type="button"
+      class="btn btn--primary"
+      [disabled]="submitting() || !canWrite() || rows().length === 0"
+      (click)="submit()"
+    >
+      {{ submitting() ? 'Cargando…' : 'Cargar inventario inicial' }}
+    </button>
+  </div>
+</section>

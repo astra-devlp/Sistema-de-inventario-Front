@@ -37,6 +37,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/products/products.routes').then((m) => m.PRODUCTS_ROUTES),
       },
       {
+        path: 'stock',
+        canActivate: [roleGuard(...COMPANY_ROLES)],
+        loadChildren: () => import('./features/stock/stock.routes').then((m) => m.STOCK_ROUTES),
+      },
+      {
         path: 'clientes',
         canActivate: [roleGuard(...COMPANY_ROLES)],
         loadChildren: () => import('./features/customers/customers.routes').then((m) => m.CUSTOMERS_ROUTES),
