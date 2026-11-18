@@ -23,7 +23,7 @@ export class UnitsPage {
 
   protected readonly units = signal<Unit[]>([]);
   protected readonly presentations = signal<Presentation[]>([]);
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<UnitsModal>(null);
   protected readonly selectedUnit = signal<Unit | null>(null);

@@ -19,7 +19,7 @@ export class WarehousesPage {
 
   protected readonly warehouses = signal<Warehouse[]>([]);
   protected readonly query = signal('');
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<WarehouseModal>(null);
   protected readonly selected = signal<Warehouse | null>(null);

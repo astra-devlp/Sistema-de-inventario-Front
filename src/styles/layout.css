@@ -1,6 +1,8 @@
 /* Shell: header full-bleed + sidebar debajo (como Landing). */
 .app-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
+  /* Evita que el margen del main colapse y sume altura fantasma al documento. */
+  display: flow-root;
   background-color: var(--bg);
   background-image: var(--bg-glow);
   background-attachment: fixed;
@@ -109,8 +111,10 @@
   color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
   z-index: 30;
   border-right: 1px solid var(--sidebar-border);
   transition:
@@ -118,8 +122,21 @@
     width var(--transition);
 }
 
+.sidebar:hover {
+  scrollbar-color: color-mix(in srgb, var(--sidebar-text) 35%, transparent) transparent;
+}
+
 .sidebar::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.sidebar:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--sidebar-text) 35%, transparent);
 }
 
 .sidebar__nav {
@@ -168,6 +185,14 @@
   font-weight: 600;
   letter-spacing: -0.01em;
   margin-bottom: 4px;
+  align-items: flex-start;
+  min-height: 40px;
+}
+
+.sidebar__link--root .sidebar__label {
+  white-space: normal;
+  line-height: 1.25;
+  padding-top: 1px;
 }
 
 .sidebar__group {
@@ -224,11 +249,16 @@
 
 .main {
   margin-left: var(--sidebar-width);
-  margin-top: var(--topbar-height);
+  /* padding (no margin): el header fixed no suma 72px extra al scroll del documento. */
+  padding-top: var(--topbar-height);
+  margin-top: 0;
   min-width: 0;
-  min-height: calc(100vh - var(--topbar-height));
+  min-height: 100dvh;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  /* Sin scroll propio: si el contenido supera el viewport, hace scroll la página. */
+  overflow: visible;
   transition: margin-left var(--transition);
 }
 
@@ -375,9 +405,15 @@
 }
 
 .content {
-  padding: clamp(20px, 2.5vw, 36px);
-  max-width: 1440px;
+  flex: 1 0 auto;
   width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  /* Bottom padding corto: no empuja scroll en pantallas cortas con poco contenido. */
+  padding: clamp(16px, 2vw, 28px) clamp(16px, 2.5vw, 36px) clamp(16px, 2vw, 28px);
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: visible;
 }
 
 .page-header {
@@ -420,12 +456,13 @@
   padding: 16px 18px;
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-alt) 65%, var(--surface));
+  min-width: 0;
 }
 
 .toolbar__search {
   position: relative;
-  flex: 1;
-  min-width: 220px;
+  flex: 1 1 220px;
+  min-width: 0;
 }
 
 .toolbar__search .icon {
@@ -539,12 +576,24 @@
     display: none;
   }
   .content {
-    padding: var(--space-4);
+    padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right))
+      max(var(--space-4), env(safe-area-inset-bottom))
+      max(var(--space-4), env(safe-area-inset-left));
   }
   .grid--2,
   .grid--3,
   .grid--4 {
     grid-template-columns: 1fr;
+  }
+  .page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
   }
   .topbar__user-meta {
     display: none;

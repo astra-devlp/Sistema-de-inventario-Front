@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable, forkJoin, shareReplay } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
 import {
   CategoryRef,
@@ -17,6 +17,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ProductsApi {
   private readonly http = inject(HttpClient);
+  private catalogs$?: Observable<ProductCatalogs>;
 
   list(filters: ProductFilters): Observable<Product[]> {
     const query = filters.query.trim();
@@ -48,11 +49,19 @@ export class ProductsApi {
 
   /** Solo lectura: el CRUD de estos catálogos pertenece a otras pantallas. */
   catalogs(): Observable<ProductCatalogs> {
-    return forkJoin({
-      categories: this.http.get<CategoryRef[]>(`${API_URL}/categories`),
-      units: this.http.get<UnitRef[]>(`${API_URL}/units`),
-      presentations: this.http.get<PresentationRef[]>(`${API_URL}/presentations`),
-      taxes: this.http.get<TaxRef[]>(`${API_URL}/taxes`),
-    });
+    if (!this.catalogs$) {
+      this.catalogs$ = forkJoin({
+        categories: this.http.get<CategoryRef[]>(`${API_URL}/categories`),
+        units: this.http.get<UnitRef[]>(`${API_URL}/units`),
+        presentations: this.http.get<PresentationRef[]>(`${API_URL}/presentations`),
+        taxes: this.http.get<TaxRef[]>(`${API_URL}/taxes`),
+      }).pipe(shareReplay({ bufferSize: 1, refCount: false }));
+    }
+    return this.catalogs$;
+  }
+
+  /** Invalidar tras crear/editar categorías, unidades, etc. */
+  invalidateCatalogs(): void {
+    this.catalogs$ = undefined;
   }
 }

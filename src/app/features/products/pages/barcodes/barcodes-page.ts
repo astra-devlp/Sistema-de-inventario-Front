@@ -22,7 +22,7 @@ export class BarcodesPage {
   protected readonly presentations = signal<Presentation[]>([]);
   protected readonly query = signal('');
   protected readonly codeType = signal<BarcodeType | ''>('');
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<BarcodeModal>(null);
   protected readonly selected = signal<Barcode | null>(null);

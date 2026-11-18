@@ -1,10 +1,10 @@
 <section class="dash">
   <header class="dash__hero">
-    <p class="dash__eyebrow">Asesoría contable del inventario</p>
+    <p class="dash__eyebrow">Inicio</p>
     <div class="dash__hero-row">
       <div>
         <h1 class="dash__title">Hola, {{ firstName() }}</h1>
-        <p class="dash__date">{{ dateLabel }} · lectura automática de tu kardex</p>
+        <p class="dash__date">{{ dateLabel }}</p>
       </div>
       <div class="dash__hero-actions">
         <a class="btn btn--outline" routerLink="/inventario/existencias">
@@ -15,24 +15,6 @@
         </a>
       </div>
     </div>
-
-    @if (!loading()) {
-      <div class="dash-health" [attr.data-tone]="health().tone">
-        <div>
-          <p class="dash-health__label">{{ health().label }}</p>
-          <p class="dash-health__text">{{ health().text }}</p>
-        </div>
-        <span class="dash-health__pill">Opinión del tablero</span>
-      </div>
-
-      <article class="dash-briefing">
-        <p class="dash-briefing__eyebrow">El tablero te habla</p>
-        <h2 class="dash-briefing__title">Informe contable de hoy</h2>
-        @for (paragraph of briefing(); track $index) {
-          <p class="dash-briefing__p">{{ paragraph }}</p>
-        }
-      </article>
-    }
   </header>
 
   @if (error()) {
@@ -49,23 +31,6 @@
       </article>
     }
   </section>
-
-  @if (!loading() && insights().length) {
-    <section class="dash-insights">
-      <h2 class="dash-section-title">Recomendaciones del contador</h2>
-      <div class="dash-insights__grid">
-        @for (insight of insights(); track insight.title) {
-          <article class="dash-insight" [attr.data-tone]="insight.tone">
-            <p class="dash-insight__title">{{ insight.title }}</p>
-            <p class="dash-insight__detail">{{ insight.detail }}</p>
-            @if (insight.actionPath && insight.actionLabel) {
-              <a class="dash-link" [routerLink]="insight.actionPath">{{ insight.actionLabel }} →</a>
-            }
-          </article>
-        }
-      </div>
-    </section>
-  }
 
   <section class="dash__grid">
     <article class="dash-panel dash-panel--chart">

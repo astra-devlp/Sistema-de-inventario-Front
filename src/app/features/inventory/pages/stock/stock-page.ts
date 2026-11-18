@@ -33,7 +33,7 @@ export class StockPage {
   protected readonly query = signal('');
   protected readonly warehouseId = signal<number | null>(null);
   protected readonly lowStock = signal(false);
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<StockModal>(null);
   protected readonly selected = signal<Stock | null>(null);

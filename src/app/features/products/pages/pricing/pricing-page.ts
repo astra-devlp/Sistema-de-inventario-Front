@@ -27,7 +27,7 @@ export class PricingPage {
   protected readonly presentations = signal<Presentation[]>([]);
   protected readonly query = signal('');
   protected readonly priceList = signal<PriceList | ''>('');
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<PricingModal>(null);
   protected readonly selectedPrice = signal<Price | null>(null);

@@ -26,7 +26,7 @@ export class ProductsPage {
   protected readonly query = signal('');
   protected readonly categoryId = signal<number | null>(null);
   protected readonly isActive = signal<boolean | null>(null);
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<ProductModal>(null);
   protected readonly selected = signal<Product | null>(null);

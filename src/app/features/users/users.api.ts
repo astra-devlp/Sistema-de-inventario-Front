@@ -13,11 +13,20 @@ export interface UserPayload {
   is_active?: boolean;
   plan?: ClientPlan | null;
   plan_starts_at?: string | null;
+  business_name?: string | null;
+  business_nit?: string | null;
+  business_phone?: string | null;
+  business_address?: string | null;
+  business_city?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class UsersApi {
   private readonly http = inject(HttpClient);
+
+  me(): Observable<AuthUser> {
+    return this.http.get<AuthUser>(`${API_URL}/users/me`);
+  }
 
   list(query = ''): Observable<AuthUser[]> {
     const params = query.trim() ? new HttpParams().set('name', query.trim()) : undefined;

@@ -21,6 +21,13 @@ export const adminGuard: CanActivateFn = () => {
   return inject(Router).createUrlTree([auth.homePath()]);
 };
 
+/** Cliente o Admin: módulo Usuarios (personal). El rol Usuario no entra. */
+export const clientGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isLoggedIn() && (auth.isClient() || auth.isAdmin())) return true;
+  return inject(Router).createUrlTree([auth.homePath()]);
+};
+
 /** Entrada del panel según rol (Usuario → caja, resto → asesoría). */
 export const homeRedirectGuard: CanActivateFn = () => {
   const auth = inject(AuthService);

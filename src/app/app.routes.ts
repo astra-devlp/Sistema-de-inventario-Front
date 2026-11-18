@@ -1,5 +1,11 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, guestGuard, homeRedirectGuard } from './core/auth/auth.guard';
+import {
+  adminGuard,
+  authGuard,
+  clientGuard,
+  guestGuard,
+  homeRedirectGuard,
+} from './core/auth/auth.guard';
 import { MainLayout } from './core/layout/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -38,6 +44,7 @@ export const routes: Routes = [
       },
       {
         path: 'usuarios',
+        canActivate: [clientGuard],
         loadChildren: () => import('./features/users/users.routes').then((m) => m.USERS_ROUTES),
       },
       {

@@ -63,12 +63,18 @@ export class InventoryApi {
   // Movimientos
 
   movements(
-    filters: { warehouseId?: number | null; productId?: number | null; movementType?: MovementType | '' } = {},
+    filters: {
+      warehouseId?: number | null;
+      productId?: number | null;
+      movementType?: MovementType | '';
+      limit?: number;
+    } = {},
   ): Observable<Movement[]> {
     let params = new HttpParams();
     if (filters.warehouseId) params = params.set('warehouse_id', filters.warehouseId);
     if (filters.productId) params = params.set('product_id', filters.productId);
     if (filters.movementType) params = params.set('movement_type', filters.movementType);
+    if (filters.limit) params = params.set('limit', filters.limit);
     return this.http.get<Movement[]>(`${API_URL}/inventory/movements`, { params });
   }
 

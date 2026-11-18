@@ -32,7 +32,7 @@ export class MovementsPage {
   protected readonly products = signal<ProductOption[]>([]);
   protected readonly warehouseId = signal<number | null>(null);
   protected readonly movementType = signal<MovementType | ''>('');
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly formOpen = signal(false);
 

@@ -19,7 +19,7 @@ export class AccountsPage {
 
   protected readonly accounts = signal<AuthUser[]>([]);
   protected readonly query = signal('');
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<AccountModal>(null);
   protected readonly selected = signal<AuthUser | null>(null);

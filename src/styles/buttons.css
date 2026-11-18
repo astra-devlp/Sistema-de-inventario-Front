@@ -3,11 +3,13 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+  min-height: 40px;
   padding: 10px 16px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 14px;
+  line-height: 1.2;
   white-space: nowrap;
   background: var(--surface);
   transition:
@@ -58,13 +60,15 @@
 }
 
 .btn--sm {
+  min-height: 34px;
   padding: 6px 11px;
   font-size: 13px;
 }
 
 .btn--icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
   padding: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -78,6 +82,10 @@
 .btn--icon.btn--danger-hover:hover {
   color: var(--danger);
   background: var(--danger-soft);
+}
+
+.btn--block {
+  width: 100%;
 }
 
 .btn:disabled {

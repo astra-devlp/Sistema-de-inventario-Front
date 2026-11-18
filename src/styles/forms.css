@@ -2,6 +2,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .form-grid--3 {
@@ -12,6 +13,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .field--full {
@@ -57,17 +59,24 @@
   color: var(--text-faint);
 }
 
+.input--money {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  text-align: right;
+}
+
 .input:focus,
 .select:focus,
 .textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(36, 87, 214, 0.18);
+  box-shadow: 0 0 0 3px rgb(36 87 214 / 0.18);
 }
 
 .select--auto {
   width: auto;
-  min-width: 220px;
+  min-width: min(220px, 100%);
+  max-width: 100%;
 }
 
 .textarea {
@@ -78,10 +87,12 @@
 .hint {
   font-size: 12px;
   color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .input-group {
   display: flex;
+  min-width: 0;
 }
 
 .input-group__addon {
@@ -118,9 +129,10 @@
 }
 
 .check input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   accent-color: var(--primary);
+  flex-shrink: 0;
 }
 
 .form-section-title {
@@ -135,16 +147,21 @@
   border-bottom: 1px solid var(--border);
 }
 
-@media (max-width: 640px) {
-  .form-grid,
-  .form-grid--3 {
-    grid-template-columns: 1fr;
-  }
-}
-
 .stock-current {
   padding: 9px 0;
 }
 .hint--warning {
   color: var(--warning);
+}
+
+@media (max-width: 900px) {
+  .form-grid,
+  .form-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .select--auto {
+    width: 100%;
+    min-width: 0;
+  }
 }

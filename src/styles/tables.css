@@ -1,6 +1,15 @@
 .table-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
+  /* Sin gutter fijo: la barra horizontal solo aparece si la tabla no cabe. */
+  background:
+    linear-gradient(90deg, var(--surface) 30%, transparent) 0 0 / 24px 100% no-repeat local,
+    linear-gradient(270deg, var(--surface) 30%, transparent) 100% 0 / 24px 100% no-repeat local;
 }
 
 .table {
@@ -39,6 +48,10 @@
   background: color-mix(in srgb, var(--accent) 5%, var(--surface));
 }
 
+.table tbody tr:hover .col-actions {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+
 .table tbody tr:last-child td {
   border-bottom: 0;
 }
@@ -47,7 +60,18 @@
   text-align: right;
   width: 1%;
   white-space: nowrap;
+  position: sticky;
+  right: 0;
+  background: var(--surface);
+  box-shadow: -8px 0 12px -12px rgb(0 0 0 / 0.35);
+  z-index: 1;
 }
+
+.table thead .col-actions {
+  background: color-mix(in srgb, var(--surface-alt) 80%, var(--surface));
+  z-index: 2;
+}
+
 .table .col-num {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -81,5 +105,6 @@
 
 .pagination__buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
 }

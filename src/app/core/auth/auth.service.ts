@@ -97,7 +97,9 @@ export class AuthService {
 export function httpErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
     // Sin respuesta: la API está apagada, no es alcanzable o rechazó el origen (CORS).
-    if (error.status === 0) return `${fallback}. No hay conexión con la API; revisa que el backend esté encendido`;
+    if (error.status === 0) {
+      return `${fallback}. No hay conexión con la API; revisa que el backend esté encendido (http://127.0.0.1:8000)`;
+    }
     const detail = error.error?.detail;
     if (typeof detail === 'string' && detail.trim()) return detail;
     // FastAPI devuelve los errores de validación (422) como una lista de { loc, msg }.
@@ -106,6 +108,9 @@ export function httpErrorMessage(error: unknown, fallback: string): string {
         .map((item) => (Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : null))
         .filter((field): field is string => typeof field === 'string');
       if (fields.length) return `${fallback}. Revisa: ${[...new Set(fields)].join(', ')}`;
+    }
+    if (error.status === 401) {
+      return `${fallback}. Sesión vencida o inválida: cierra sesión y vuelve a entrar`;
     }
     if (error.status >= 500) return `${fallback}. Error del servidor (${error.status})`;
   }

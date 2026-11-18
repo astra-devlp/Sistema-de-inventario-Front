@@ -155,6 +155,48 @@ export function formatMoney(value: DecimalValue | null | undefined): string {
   return moneyFormat.format(toNumber(value));
 }
 
+const moneyInputFormat = new Intl.NumberFormat('es-CO', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** Formato editable: 1.250.000,50 (miles con punto, decimales con coma). */
+export function formatMoneyInput(value: DecimalValue | null | undefined): string {
+  const amount = toNumber(value);
+  if (!Number.isFinite(amount)) return '';
+  return moneyInputFormat.format(amount);
+}
+
+/** Parsea montos escritos en es-CO ($ 1.250.000,50 → 1250000.5). */
+export function parseMoneyInput(raw: string | null | undefined): number | null {
+  if (raw == null) return null;
+  let text = String(raw).trim();
+  if (!text) return null;
+  text = text.replace(/[$\s]|COP/gi, '');
+  if (!text) return null;
+
+  const hasComma = text.includes(',');
+  const hasDot = text.includes('.');
+  if (hasComma && hasDot) {
+    // 1.250.000,50 → quitar miles, coma → punto
+    text = text.replace(/\./g, '').replace(',', '.');
+  } else if (hasComma) {
+    text = text.replace(',', '.');
+  } else if (hasDot) {
+    // Solo puntos: miles (1.250.000 / 150.000) vs decimal anglosajón (1500.5).
+    const parts = text.split('.');
+    const last = parts[parts.length - 1] ?? '';
+    if (parts.length > 2 || last.length === 3) {
+      text = parts.join('');
+    }
+  }
+
+  text = text.replace(/[^\d.-]/g, '');
+  if (!text || text === '-' || text === '.') return null;
+  const amount = Number(text);
+  return Number.isFinite(amount) ? amount : null;
+}
+
 /** Cantidad con signo para el historial: +10, -5. */
 export function formatSignedQuantity(value: DecimalValue): string {
   const number = toNumber(value);
