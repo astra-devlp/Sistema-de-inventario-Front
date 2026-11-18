@@ -33,7 +33,7 @@
         </div>
 
         <div class="cfg-panel__body cfg-prefs">
-          @if (isClient()) {
+          @if (isCompanyAdmin()) {
             <div class="cfg-callout">
               <p class="cfg-callout__title">Datos del local</p>
               <p class="cfg-callout__text">
@@ -170,12 +170,12 @@
               </div>
             </dl>
             <p class="hint cfg-business__note">
-              @if (isClient()) {
+              @if (isCompanyAdmin()) {
                 Estos datos viven en
                 <a routerLink="/cuenta">Mi cuenta</a>
                 y puedes editarlos allí.
               } @else if (isStaff()) {
-                Solo lectura: los define el dueño de la cuenta.
+                Solo lectura: los define el Administrador de la empresa.
               } @else {
                 Los datos del local los define cada cuenta en Mi cuenta.
               }

@@ -3,8 +3,9 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, firstValueFrom, map, of, retry, switchMap, tap, throwError, timer } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
 import { SKIP_SESSION_REDIRECT } from '@core/api/http-context';
+import { Company } from '@core/company/company.model';
 import { CompanyService } from '@core/company/company.service';
-import { AuthUser, LoginResponse, PLATFORM_ADMIN_ROLES, homePathForRole } from './auth.model';
+import { AuthUser, LoginResponse, PLATFORM_ROLE, UserRole, homePathForRole } from './auth.model';
 import { clearToken, purgeLegacyStorage, readToken, saveToken } from './token-storage';
 
 export { httpErrorMessage } from '@core/api/api-error';
@@ -20,11 +21,14 @@ export const PLAN_EXPIRED_PATH = '/plan-vencido';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly company = inject(CompanyService);
+  private readonly companyApi = inject(CompanyService);
   private readonly current = signal<AuthUser | null>(null);
   private readonly planExpiredFlag = signal(false);
+  private readonly currentCompany = signal<Company | null>(null);
 
   readonly user = this.current.asReadonly();
+  /** Empresa del usuario (`/companies/me`); `null` para plataforma o si aún no se cargó. */
+  readonly company = this.currentCompany.asReadonly();
   /** La empresa tiene el plan vencido: la sesión sigue válida, pero no se puede operar. */
   readonly planExpired = this.planExpiredFlag.asReadonly();
 
@@ -62,19 +66,23 @@ export class AuthService {
     return this.current() !== null;
   }
 
-  /** Administradores de la plataforma: ven el panel Administración → Cuentas. */
-  isAdmin(): boolean {
+  hasRole(...roles: UserRole[]): boolean {
     const role = this.current()?.role;
-    return role != null && PLATFORM_ADMIN_ROLES.includes(role);
+    return role != null && roles.includes(role);
   }
 
-  /** Dueño de la cuenta del cliente: gestiona el personal en Usuarios. */
-  isClient(): boolean {
-    return this.current()?.role === 'Cliente';
+  /** Dueño del software: sin empresa, solo opera la plataforma. */
+  isPlatformAdmin(): boolean {
+    return this.hasRole(PLATFORM_ROLE);
+  }
+
+  /** Administrador de la empresa: gestiona usuarios, sedes y los datos de la empresa. */
+  isCompanyAdmin(): boolean {
+    return this.hasRole('Administrador');
   }
 
   canManageStaff(): boolean {
-    return this.isAdmin() || this.isClient();
+    return this.isCompanyAdmin();
   }
 
   /** Inicio del panel: con el plan vencido, la pantalla de renovación; si no, según el rol. */
@@ -99,13 +107,22 @@ export class AuthService {
     const user = this.current();
     if (!user || user.company_id === null) {
       this.planExpiredFlag.set(false);
+      this.currentCompany.set(null);
       return of(undefined);
     }
-    return this.company.me(true).pipe(
-      tap((company) => this.planExpiredFlag.set(company.plan_expired)),
+    return this.companyApi.me(true).pipe(
+      tap((company) => {
+        this.currentCompany.set(company);
+        this.planExpiredFlag.set(company.plan_expired);
+      }),
       map(() => undefined),
       catchError(() => of(undefined)),
     );
+  }
+
+  /** Actualiza la empresa en memoria (por ejemplo tras editarla en Mi cuenta). */
+  setCompany(company: Company): void {
+    this.currentCompany.set(company);
   }
 
   setPlanExpired(expired: boolean): void {
@@ -121,6 +138,7 @@ export class AuthService {
   clearSession(): void {
     clearToken();
     this.current.set(null);
+    this.currentCompany.set(null);
     this.planExpiredFlag.set(false);
   }
 

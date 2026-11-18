@@ -2,8 +2,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
-import { AuthUser, ClientPlan, UserRole } from '@core/auth/auth.model';
+import { AuthUser, UserRole } from '@core/auth/auth.model';
 
+/** `PATCH /users` es cerrado (422 con campos de más); `is_active` solo se envía al editar. */
 export interface UserPayload {
   name: string;
   email: string;
@@ -11,13 +12,6 @@ export interface UserPayload {
   role: UserRole;
   phone: string | null;
   is_active?: boolean;
-  plan?: ClientPlan | null;
-  plan_starts_at?: string | null;
-  business_name?: string | null;
-  business_nit?: string | null;
-  business_phone?: string | null;
-  business_address?: string | null;
-  business_city?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

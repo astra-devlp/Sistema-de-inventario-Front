@@ -1,10 +1,13 @@
-export type UserRole =
-  | 'Administrador'
-  | 'Administrador de plataforma'
-  | 'Cliente'
-  | 'Usuario';
+import type { Company } from '@core/company/company.model';
 
-export type ClientPlan = 'Prueba' | 'Mensual' | 'Anual';
+/** Valores exactos que guarda y devuelve la API en `role`. No existe un rol «Cliente». */
+export type UserRole = 'Administrador de plataforma' | 'Administrador' | 'Supervisor' | 'Usuario';
+
+/** Dueño del software: sin empresa, solo opera `/platform/*`; en los endpoints de negocio recibe 403. */
+export const PLATFORM_ROLE: UserRole = 'Administrador de plataforma';
+
+/** Roles de una empresa (los que se pueden crear y asignar desde Usuarios). */
+export const COMPANY_ROLES: UserRole[] = ['Administrador', 'Supervisor', 'Usuario'];
 
 export interface AuthUser {
   id: number;
@@ -13,39 +16,31 @@ export interface AuthUser {
   role: UserRole;
   phone: string | null;
   is_active: boolean;
-  plan: ClientPlan | null;
-  plan_starts_at: string | null;
-  plan_ends_at: string | null;
   /** Empresa del usuario; `null` para el administrador de plataforma. */
   company_id: number | null;
-  /** Solo rol Usuario: id del Cliente dueño del negocio. */
-  account_owner_id: number | null;
-  /** Solo rol Cliente: datos del local en facturas. */
-  business_name: string | null;
-  business_nit: string | null;
-  business_phone: string | null;
-  business_address: string | null;
-  business_city: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-/** Ruta de entrada según rol. */
-export function homePathForRole(role: UserRole | null | undefined): string {
-  if (role === 'Usuario') return '/cierre-caja';
-  return '/inicio';
+/** Etiqueta para mostrar. «Cajero» es solo del front: el valor que viaja en `role` sigue siendo `Usuario`. */
+export function roleLabel(role: UserRole): string {
+  return role === 'Usuario' ? 'Cajero' : role;
 }
 
 /**
- * Texto bajo el nombre en UI (topbar, Mi cuenta).
- * Cliente/Usuario: nombre de la tienda (no el rol interno).
- * Admin: el rol.
+ * Ruta de entrada según rol. Mientras la caja no exista, el personal de empresa entra a Productos;
+ * el administrador de plataforma, a su pantalla (la API de negocio le responde 403).
  */
-export function userContextLabel(user: AuthUser | null | undefined): string {
+export function homePathForRole(role: UserRole | null | undefined): string {
+  return role === PLATFORM_ROLE ? '/plataforma' : '/productos';
+}
+
+/** Texto bajo el nombre en UI (topbar, Mi cuenta): «Empresa · Rol». */
+export function userContextLabel(user: AuthUser | null | undefined, company: Company | null | undefined): string {
   if (!user) return '—';
-  if (user.role === 'Cliente' || user.role === 'Usuario') {
-    const store = user.business_name?.trim();
-    return store || 'Mi tienda';
-  }
-  return user.role;
+  if (user.role === PLATFORM_ROLE) return user.role;
+  const name = company?.name.trim();
+  return name ? `${name} · ${roleLabel(user.role)}` : roleLabel(user.role);
 }
 
 export interface LoginResponse {
@@ -53,15 +48,3 @@ export interface LoginResponse {
   token_type: string;
   user: AuthUser;
 }
-
-/** Solo Administrador ve Administración → Cuentas. */
-export const PLATFORM_ADMIN_ROLES: UserRole[] = ['Administrador'];
-/** Roles visibles en la tabla de Cuentas (incluye legacy Admin de plataforma). */
-export const ACCOUNT_ROLES: UserRole[] = [
-  'Administrador',
-  'Administrador de plataforma',
-  'Cliente',
-];
-/** Roles que se pueden crear/asignar desde el formulario. */
-export const ACCOUNT_CREATE_ROLES: UserRole[] = ['Administrador', 'Cliente'];
-export const CLIENT_PLANS: ClientPlan[] = ['Prueba', 'Mensual', 'Anual'];

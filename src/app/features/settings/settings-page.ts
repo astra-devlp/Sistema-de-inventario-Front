@@ -2,7 +2,6 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
-import { UsersApi } from '@features/users/users.api';
 import { Icon, IconName } from '@shared/ui/icon/icon';
 
 const SETTINGS_KEY = 'inventario.settings';
@@ -130,17 +129,14 @@ function readTicket(): TicketTemplate {
 })
 export class SettingsPage {
   private readonly auth = inject(AuthService);
-  private readonly usersApi = inject(UsersApi);
   private readonly current = readSettings();
 
   protected readonly user = this.auth.user;
-  protected readonly isClient = computed(() => this.user()?.role === 'Cliente');
-  protected readonly isStaff = computed(() => this.user()?.role === 'Usuario');
-  /** Cliente edita plantilla; Usuario solo la ve (datos del local vienen de la cuenta). */
-  protected readonly canEditTicket = computed(() => {
-    const role = this.user()?.role;
-    return role === 'Cliente' || role === 'Administrador' || role === 'Administrador de plataforma';
-  });
+  /** Administrador de la empresa: edita la plantilla y los datos de la empresa (en Mi cuenta). */
+  protected readonly isCompanyAdmin = computed(() => this.auth.isCompanyAdmin());
+  /** Supervisor y Cajero solo ven la plantilla; los datos de la empresa los define el Administrador. */
+  protected readonly isStaff = computed(() => this.auth.hasRole('Supervisor', 'Usuario'));
+  protected readonly canEditTicket = computed(() => this.auth.isCompanyAdmin());
 
   protected companyName = this.current.companyName;
   protected lowStockAlerts = this.current.lowStockAlerts;
@@ -157,13 +153,13 @@ export class SettingsPage {
   );
 
   protected readonly business = computed(() => {
-    const u = this.user();
+    const c = this.auth.company();
     return {
-      name: (u?.business_name ?? '').trim() || '—',
-      nit: (u?.business_nit ?? '').trim() || '—',
-      phone: (u?.business_phone ?? '').trim() || '—',
-      address: (u?.business_address ?? '').trim() || '—',
-      city: (u?.business_city ?? '').trim() || '—',
+      name: (c?.name ?? '').trim() || '—',
+      nit: (c?.tax_id ?? '').trim() || '—',
+      phone: (c?.phone ?? '').trim() || '—',
+      address: (c?.address ?? '').trim() || '—',
+      city: (c?.city ?? '').trim() || '—',
     };
   });
 
@@ -199,10 +195,8 @@ export class SettingsPage {
   ];
 
   constructor() {
-    this.usersApi.me().subscribe({
-      next: (me) => this.auth.setUser(me),
-      error: () => undefined,
-    });
+    // Datos al día de la empresa para la vista previa del ticket.
+    this.auth.refreshPlan().subscribe();
   }
 
   protected device(id: DeviceId): DeviceState {

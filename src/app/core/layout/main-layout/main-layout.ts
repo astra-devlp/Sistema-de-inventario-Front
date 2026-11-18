@@ -2,7 +2,7 @@ import { Component, computed, HostListener, inject, signal } from '@angular/core
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { userContextLabel } from '@core/auth/auth.model';
 import { AuthService } from '@core/auth/auth.service';
-import { NAV_GROUPS, UPCOMING_NAV } from '@core/navigation/nav.config';
+import { NAV_GROUPS, UPCOMING_NAV, navGroupsForRole } from '@core/navigation/nav.config';
 import { ThemeService } from '@core/theme/theme.service';
 import { Icon } from '@shared/ui/icon/icon';
 
@@ -19,17 +19,10 @@ export class MainLayout {
   protected readonly upcoming = UPCOMING_NAV;
   protected readonly user = this.auth.user;
   protected readonly initial = computed(() => (this.user()?.name.trim().charAt(0) || 'U').toUpperCase());
-  /** Cliente/Usuario ven la tienda; admin ve el rol. */
-  protected readonly contextLabel = computed(() => userContextLabel(this.user()));
-  /** Filtra por rol declarado en el nav; Administración solo para admin. */
-  protected readonly groups = computed(() => {
-    const role = this.user()?.role;
-    return NAV_GROUPS.filter((group) => {
-      if (group.id === 'admin' && !this.auth.isAdmin()) return false;
-      if (group.roles?.length) return role != null && group.roles.includes(role);
-      return true;
-    });
-  });
+  /** «Empresa · Rol» (plataforma: solo el rol). */
+  protected readonly contextLabel = computed(() => userContextLabel(this.user(), this.auth.company()));
+  /** Grupos del menú que corresponden al rol (la API sigue siendo la que decide). */
+  protected readonly groups = computed(() => navGroupsForRole(NAV_GROUPS, this.user()?.role));
 
   protected homePath(): string {
     return this.auth.homePath();

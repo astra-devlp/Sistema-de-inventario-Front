@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { AuthUser } from '@core/auth/auth.model';
+import { AuthUser, roleLabel } from '@core/auth/auth.model';
 import { AuthService, httpErrorMessage } from '@core/auth/auth.service';
 import { Icon } from '@shared/ui/icon/icon';
 import { PageHeader } from '@shared/ui/page-header/page-header';
@@ -18,6 +18,7 @@ export class UsersPage {
   private readonly api = inject(UsersApi);
   protected readonly auth = inject(AuthService);
 
+  protected readonly roleLabel = roleLabel;
   protected readonly users = signal<AuthUser[]>([]);
   protected readonly query = signal('');
   protected readonly loading = signal(true);
@@ -69,7 +70,7 @@ export class UsersPage {
     this.error.set(null);
     this.api.list(this.query()).subscribe({
       next: (users) => {
-        this.users.set(users.filter((user) => user.role === 'Usuario'));
+        this.users.set(users);
         this.loading.set(false);
       },
       error: (err: unknown) => {

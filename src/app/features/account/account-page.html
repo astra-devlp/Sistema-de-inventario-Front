@@ -16,7 +16,7 @@
     </div>
   </header>
 
-  <form class="acc-layout" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+  <div class="acc-layout">
     @if (error()) {
       <p class="acc-toast acc-toast--error" role="alert">{{ error() }}</p>
     }
@@ -28,103 +28,111 @@
       <article class="acc-panel">
         <div class="acc-panel__head">
           <div>
-            <p class="acc-panel__eyebrow">Facturación</p>
-            <h2 class="acc-panel__title">Datos del local</h2>
-            <p class="acc-panel__sub">
-              Salen en cada factura de venta: productos, precios e IMEI de celulares.
-            </p>
+            <p class="acc-panel__eyebrow">Recibos</p>
+            <h2 class="acc-panel__title">Datos de la empresa</h2>
+            <p class="acc-panel__sub">Salen en el encabezado de los recibos de venta y de devolución.</p>
           </div>
-          @if (!canEditBusiness()) {
+          @if (!canEdit()) {
             <span class="acc-chip">Solo lectura</span>
           }
         </div>
 
-        <div class="acc-panel__body">
-          @if (canEditBusiness()) {
-            <div class="form-grid account-grid">
-              <div class="field field--full">
-                <label class="label" for="acc-business-name">Nombre del local o empresa</label>
-                <input
-                  id="acc-business-name"
-                  class="input"
-                  type="text"
-                  formControlName="business_name"
-                  placeholder="Ej. Tienda Central"
-                  autocomplete="organization"
-                />
+        <form [formGroup]="companyForm" (submit)="$event.preventDefault(); submitCompany()">
+          <div class="acc-panel__body">
+            @if (canEdit()) {
+              <div class="form-grid account-grid">
+                <div class="field field--full">
+                  <label class="label" for="acc-company-name">Nombre comercial <span class="required">*</span></label>
+                  <input
+                    id="acc-company-name"
+                    class="input"
+                    type="text"
+                    formControlName="name"
+                    placeholder="Ej. Tienda Central"
+                    autocomplete="organization"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="acc-company-phone">Teléfono</label>
+                  <input
+                    id="acc-company-phone"
+                    class="input"
+                    type="tel"
+                    formControlName="phone"
+                    placeholder="Ej. 312 275 4222"
+                    autocomplete="tel"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="acc-company-city">Ciudad</label>
+                  <input
+                    id="acc-company-city"
+                    class="input"
+                    type="text"
+                    formControlName="city"
+                    placeholder="Ej. Armenia, Quindío"
+                    autocomplete="address-level2"
+                  />
+                </div>
+                <div class="field field--full">
+                  <label class="label" for="acc-company-address">Dirección</label>
+                  <input
+                    id="acc-company-address"
+                    class="input"
+                    type="text"
+                    formControlName="address"
+                    placeholder="Ej. Calle 18 # 14-26"
+                    autocomplete="street-address"
+                  />
+                </div>
               </div>
-              <div class="field">
-                <label class="label" for="acc-business-nit">NIT</label>
-                <input
-                  id="acc-business-nit"
-                  class="input"
-                  type="text"
-                  formControlName="business_nit"
-                  placeholder="Ej. 900.123.456-1"
-                />
-              </div>
-              <div class="field">
-                <label class="label" for="acc-business-phone">Teléfono del local</label>
-                <input
-                  id="acc-business-phone"
-                  class="input"
-                  type="tel"
-                  formControlName="business_phone"
-                  placeholder="Ej. 312 275 4222"
-                  autocomplete="tel"
-                />
-              </div>
-              <div class="field">
-                <label class="label" for="acc-business-address">Dirección</label>
-                <input
-                  id="acc-business-address"
-                  class="input"
-                  type="text"
-                  formControlName="business_address"
-                  placeholder="Ej. Calle 18 # 14-26"
-                  autocomplete="street-address"
-                />
-              </div>
-              <div class="field">
-                <label class="label" for="acc-business-city">Ciudad</label>
-                <input
-                  id="acc-business-city"
-                  class="input"
-                  type="text"
-                  formControlName="business_city"
-                  placeholder="Ej. Armenia, Quindío"
-                  autocomplete="address-level2"
-                />
-              </div>
-            </div>
-          } @else {
+            } @else {
+              <dl class="business-profile">
+                <div class="business-profile__item business-profile__item--full">
+                  <dt>Nombre comercial</dt>
+                  <dd>{{ display(company()?.name) }}</dd>
+                </div>
+                <div class="business-profile__item">
+                  <dt>Teléfono</dt>
+                  <dd>{{ display(company()?.phone) }}</dd>
+                </div>
+                <div class="business-profile__item">
+                  <dt>Ciudad</dt>
+                  <dd>{{ display(company()?.city) }}</dd>
+                </div>
+                <div class="business-profile__item business-profile__item--full">
+                  <dt>Dirección</dt>
+                  <dd>{{ display(company()?.address) }}</dd>
+                </div>
+              </dl>
+            }
+
             <dl class="business-profile">
               <div class="business-profile__item business-profile__item--full">
-                <dt>Nombre del local o empresa</dt>
-                <dd>{{ display(user()?.business_name) }}</dd>
+                <dt>Razón social</dt>
+                <dd>{{ display(company()?.legal_name) }}</dd>
               </div>
               <div class="business-profile__item">
                 <dt>NIT</dt>
-                <dd>{{ display(user()?.business_nit) }}</dd>
-              </div>
-              <div class="business-profile__item">
-                <dt>Teléfono</dt>
-                <dd>{{ display(user()?.business_phone) }}</dd>
-              </div>
-              <div class="business-profile__item business-profile__item--full">
-                <dt>Dirección</dt>
-                <dd>{{ display(user()?.business_address) }}</dd>
-              </div>
-              <div class="business-profile__item business-profile__item--full">
-                <dt>Ciudad</dt>
-                <dd>{{ display(user()?.business_city) }}</dd>
+                <dd>{{ display(company()?.tax_id) }}</dd>
               </div>
             </dl>
             <p class="hint business-profile__note">
-              Solo el dueño de la cuenta puede editar estos datos.
+              La razón social y el NIT los cambia Astra.
+              @if (!canEdit()) {
+                Los demás datos los edita el Administrador de la empresa.
+              }
             </p>
+          </div>
+
+          @if (canEdit()) {
+            <div class="acc-panel__foot">
+              <button type="submit" class="btn btn--primary" [disabled]="submitting()">
+                {{ submitting() ? 'Guardando…' : 'Guardar datos de la empresa' }}
+              </button>
+            </div>
           }
-        </div>
+        </form>
       </article>
     }
 
@@ -135,59 +143,77 @@
           <h2 class="acc-panel__title">Perfil</h2>
           <p class="acc-panel__sub">Cómo inicias sesión y cómo te mostramos en el sistema.</p>
         </div>
+        @if (!canEdit()) {
+          <span class="acc-chip">Solo lectura</span>
+        }
       </div>
 
-      <div class="acc-panel__body form-grid account-grid">
-        <div class="field field--full">
-          <label class="label" for="acc-name">Nombre <span class="required">*</span></label>
-          <input id="acc-name" class="input" type="text" formControlName="name" autocomplete="name" />
-          <span class="hint">Aparece en la barra superior.</span>
+      <form [formGroup]="profileForm" (submit)="$event.preventDefault(); submitProfile()">
+        <div class="acc-panel__body form-grid account-grid">
+          <div class="field field--full">
+            <label class="label" for="acc-name">Nombre <span class="required">*</span></label>
+            <input id="acc-name" class="input" type="text" formControlName="name" autocomplete="name" />
+            <span class="hint">Aparece en la barra superior.</span>
+          </div>
+
+          <div class="field">
+            <label class="label" for="acc-email">Correo <span class="required">*</span></label>
+            <input
+              id="acc-email"
+              class="input"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+            />
+            <span class="hint">Para iniciar sesión.</span>
+          </div>
+
+          <div class="field">
+            <label class="label" for="acc-phone">Teléfono</label>
+            <input
+              id="acc-phone"
+              class="input"
+              type="tel"
+              formControlName="phone"
+              placeholder="Opcional"
+              autocomplete="tel"
+            />
+            <span class="hint">9 o 10 dígitos si lo llenas.</span>
+          </div>
+
+          <div class="field">
+            <label class="label" for="acc-role">Rol</label>
+            <input id="acc-role" class="input" type="text" [value]="user() ? roleLabel(user()!.role) : '—'" disabled />
+          </div>
+
+          @if (canEdit()) {
+            <div class="field field--full account-grid__divider">
+              <label class="label" for="acc-password">Nueva contraseña</label>
+              <input
+                id="acc-password"
+                class="input"
+                type="password"
+                formControlName="password"
+                autocomplete="new-password"
+                placeholder="Déjala vacía para no cambiarla"
+              />
+              <span class="hint">Mínimo 8 caracteres.</span>
+            </div>
+          } @else {
+            <p class="hint field--full">
+              Solo un Administrador de la empresa puede cambiar estos datos, incluida la contraseña.
+            </p>
+          }
         </div>
 
-        <div class="field">
-          <label class="label" for="acc-email">Correo <span class="required">*</span></label>
-          <input
-            id="acc-email"
-            class="input"
-            type="email"
-            formControlName="email"
-            autocomplete="email"
-          />
-          <span class="hint">Para iniciar sesión.</span>
-        </div>
-
-        <div class="field">
-          <label class="label" for="acc-phone">Teléfono</label>
-          <input
-            id="acc-phone"
-            class="input"
-            type="tel"
-            formControlName="phone"
-            placeholder="Opcional"
-            autocomplete="tel"
-          />
-          <span class="hint">9 o 10 dígitos si lo llenas.</span>
-        </div>
-
-        <div class="field field--full account-grid__divider">
-          <label class="label" for="acc-password">Nueva contraseña</label>
-          <input
-            id="acc-password"
-            class="input"
-            type="password"
-            formControlName="password"
-            autocomplete="new-password"
-            placeholder="Déjala vacía para no cambiarla"
-          />
-          <span class="hint">Mínimo 8 caracteres.</span>
-        </div>
-      </div>
-
-      <div class="acc-panel__foot">
-        <button type="submit" class="btn btn--primary" [disabled]="submitting()">
-          {{ submitting() ? 'Guardando…' : 'Guardar cambios' }}
-        </button>
-      </div>
+        @if (canEdit()) {
+          <div class="acc-panel__foot">
+            <button type="submit" class="btn btn--primary" [disabled]="submitting()">
+              {{ submitting() ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          </div>
+        }
+      </form>
     </article>
-  </form>
+  </div>
 </section>

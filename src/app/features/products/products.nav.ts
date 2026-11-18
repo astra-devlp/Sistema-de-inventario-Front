@@ -12,4 +12,5 @@ export const PRODUCTS_NAV: NavGroup = {
     { label: 'Unidades y presentaciones', icon: 'layers', path: '/productos/unidades' },
     { label: 'Precios e IVA', icon: 'dollar', path: '/productos/precios' },
   ],
+  roles: ['Administrador', 'Supervisor', 'Usuario'],
 };

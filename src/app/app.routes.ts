@@ -1,12 +1,12 @@
 import { Routes } from '@angular/router';
 import {
-  adminGuard,
   authGuard,
-  clientGuard,
   guestGuard,
   homeRedirectGuard,
   planExpiredGuard,
+  roleGuard,
 } from './core/auth/auth.guard';
+import { COMPANY_ROLES, PLATFORM_ROLE } from './core/auth/auth.model';
 import { MainLayout } from './core/layout/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -27,36 +27,24 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', canActivate: [homeRedirectGuard], children: [] },
       {
-        path: 'inicio',
-        loadComponent: () =>
-          import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
-      },
-      {
-        path: 'cierre-caja',
-        loadComponent: () =>
-          import('./features/cashbox/cashbox-page').then((m) => m.CashboxPage),
+        path: 'plataforma',
+        canActivate: [roleGuard(PLATFORM_ROLE)],
+        loadComponent: () => import('./features/platform/platform-page').then((m) => m.PlatformPage),
       },
       {
         path: 'productos',
+        canActivate: [roleGuard(...COMPANY_ROLES)],
         loadChildren: () => import('./features/products/products.routes').then((m) => m.PRODUCTS_ROUTES),
       },
       {
-        path: 'inventario',
-        loadChildren: () => import('./features/inventory/inventory.routes').then((m) => m.INVENTORY_ROUTES),
-      },
-      {
         path: 'clientes',
+        canActivate: [roleGuard(...COMPANY_ROLES)],
         loadChildren: () => import('./features/customers/customers.routes').then((m) => m.CUSTOMERS_ROUTES),
       },
       {
         path: 'usuarios',
-        canActivate: [clientGuard],
+        canActivate: [roleGuard('Administrador')],
         loadChildren: () => import('./features/users/users.routes').then((m) => m.USERS_ROUTES),
-      },
-      {
-        path: 'admin',
-        canActivate: [adminGuard],
-        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
       {
         path: 'cuenta',

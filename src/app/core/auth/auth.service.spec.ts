@@ -15,16 +15,9 @@ const user: AuthUser = {
   role: 'Usuario',
   phone: null,
   is_active: true,
-  plan: null,
-  plan_starts_at: null,
-  plan_ends_at: null,
   company_id: 2,
-  account_owner_id: null,
-  business_name: null,
-  business_nit: null,
-  business_phone: null,
-  business_address: null,
-  business_city: null,
+  created_at: '2026-11-18T00:00:00Z',
+  updated_at: '2026-11-18T00:00:00Z',
 };
 
 const platformUser: AuthUser = { ...user, id: 9, role: 'Administrador de plataforma', company_id: null };

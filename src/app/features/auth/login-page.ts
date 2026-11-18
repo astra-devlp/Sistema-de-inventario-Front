@@ -19,8 +19,8 @@ export class LoginPage {
   protected readonly showPassword = signal(false);
   protected readonly points = [
     { icon: 'inventory_2', label: 'Productos, precios y códigos' },
-    { icon: 'warehouse', label: 'Existencias por bodega' },
-    { icon: 'swap_horiz', label: 'Entradas, salidas y traslados' },
+    { icon: 'warehouse', label: 'Existencias por sede' },
+    { icon: 'swap_horiz', label: 'Caja, turnos y recibos' },
   ];
   protected readonly error = signal<string | null>(
     this.route.snapshot.queryParamMap.has('expired') ? 'Tu sesión expiró. Ingresa de nuevo.' : null,

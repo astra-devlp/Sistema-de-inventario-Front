@@ -14,3 +14,11 @@ export interface Company {
   plan_expires_at: string | null;
   plan_expired: boolean;
 }
+
+/** Lo que el Administrador de la empresa puede cambiar en `PATCH /companies/me`. */
+export interface CompanyUpdatePayload {
+  name?: string;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+}

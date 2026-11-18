@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { UserRole } from './auth.model';
 import { AuthService, PLAN_EXPIRED_PATH } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
@@ -26,21 +27,21 @@ export const guestGuard: CanActivateFn = () => {
   return inject(Router).createUrlTree([auth.homePath()]);
 };
 
-/** Solo administradores de la plataforma. */
-export const adminGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  if (auth.isLoggedIn() && auth.isAdmin()) return true;
-  return inject(Router).createUrlTree([auth.homePath()]);
-};
+/**
+ * Solo los roles indicados entran; el resto vuelve a su inicio. El menú oculta lo mismo, pero la ruta
+ * también se protege porque se puede escribir la URL a mano. La API sigue siendo la que manda (403).
+ */
+export function roleGuard(...roles: UserRole[]): CanActivateFn {
+  return () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    if (!auth.isLoggedIn()) return router.createUrlTree(['/login']);
+    if (auth.hasRole(...roles)) return true;
+    return router.createUrlTree([auth.homePath()]);
+  };
+}
 
-/** Cliente o Admin: módulo Usuarios (personal). El rol Usuario no entra. */
-export const clientGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  if (auth.isLoggedIn() && (auth.isClient() || auth.isAdmin())) return true;
-  return inject(Router).createUrlTree([auth.homePath()]);
-};
-
-/** Entrada del panel según rol (Usuario → caja, resto → asesoría). */
+/** Entrada del panel según rol. */
 export const homeRedirectGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   return inject(Router).createUrlTree([auth.homePath()]);

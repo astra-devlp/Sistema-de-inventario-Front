@@ -1,27 +1,20 @@
-import { ADMIN_NAV } from '@features/admin/admin.nav';
-import { CASHBOX_NAV } from '@features/cashbox/cashbox.nav';
-import {
-  CUSTOMERS_NAV_MANAGERS,
-  CUSTOMERS_NAV_STAFF,
-} from '@features/customers/customers.nav';
-import { DASHBOARD_NAV } from '@features/dashboard/dashboard.nav';
-import { INVENTORY_NAV } from '@features/inventory/inventory.nav';
+import { CUSTOMERS_NAV } from '@features/customers/customers.nav';
+import { PLATFORM_NAV } from '@features/platform/platform.nav';
 import { PRODUCTS_NAV } from '@features/products/products.nav';
+import { USERS_NAV } from '@features/users/users.nav';
+import type { UserRole } from '@core/auth/auth.model';
 import type { NavGroup } from './nav.model';
 
 /** Para sumar un módulo nuevo basta con agregar su grupo aquí y su ruta en app.routes.ts. */
-export const NAV_GROUPS: NavGroup[] = [
-  DASHBOARD_NAV,
-  CASHBOX_NAV,
-  PRODUCTS_NAV,
-  INVENTORY_NAV,
-  CUSTOMERS_NAV_MANAGERS,
-  CUSTOMERS_NAV_STAFF,
-  ADMIN_NAV,
-];
+export const NAV_GROUPS: NavGroup[] = [PLATFORM_NAV, PRODUCTS_NAV, CUSTOMERS_NAV, USERS_NAV];
 
 /** Módulos futuros: se muestran deshabilitados como referencia. */
 export const UPCOMING_NAV: Pick<NavGroup, 'label' | 'icon'>[] = [
   { label: 'Compras', icon: 'truck' },
   { label: 'Ventas', icon: 'cart' },
 ];
+
+/** Grupos del menú que ve un rol. Un grupo sin `roles` lo ven todos. */
+export function navGroupsForRole(groups: NavGroup[], role: UserRole | null | undefined): NavGroup[] {
+  return groups.filter((group) => !group.roles?.length || (role != null && group.roles.includes(role)));
+}

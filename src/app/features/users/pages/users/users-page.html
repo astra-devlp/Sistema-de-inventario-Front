@@ -1,6 +1,6 @@
 <app-page-header
   title="Usuarios"
-  subtitle="Personal que puede entrar al inventario. Las cuentas de cliente se crean en Administración."
+  subtitle="Personal de tu empresa: Administradores, Supervisores y Cajeros."
 >
   <div actions>
     @if (auth.canManageStaff()) {
@@ -48,7 +48,7 @@
           <tr>
             <td>{{ user.name }}</td>
             <td>{{ user.email }}</td>
-            <td><span class="badge badge--primary">{{ user.role }}</span></td>
+            <td><span class="badge badge--primary">{{ roleLabel(user.role) }}</span></td>
             <td class="text-muted">{{ user.phone || '—' }}</td>
             <td>
               <span
@@ -86,7 +86,6 @@
 <app-user-form-modal
   [open]="modal() === 'create' || modal() === 'edit'"
   [user]="modal() === 'edit' ? selected() : null"
-  mode="staff"
   (closed)="close()"
   (saved)="saved()"
   (deleteRequested)="open('delete', selected())"
