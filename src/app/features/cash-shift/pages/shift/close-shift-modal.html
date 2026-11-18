@@ -1,0 +1,61 @@
+<app-modal [open]="target() !== null" [title]="title()" (closed)="dismiss()">
+  @if (target(); as t) {
+    @if (error()) {
+      <p class="auth-error" role="alert">{{ error() }}</p>
+    }
+
+    @if (step() === 'count') {
+      @if (t.forced) {
+        <p class="hint">
+          Estás cerrando el turno de <strong>{{ t.ownerLabel }}</strong> en {{ t.registerLabel }}. Cuentas tú el efectivo y el
+          turno queda marcado como cierre forzado.
+        </p>
+      } @else {
+        <p class="hint">Cuenta el efectivo de la caja {{ t.registerLabel }}. El sistema no te muestra lo esperado hasta que cierres.</p>
+      }
+      <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); review()">
+        <div class="field field--full">
+          <label class="label" for="cs-counted">Efectivo contado <span class="required">*</span></label>
+          <input id="cs-counted" class="input" type="text" inputmode="decimal" formControlName="counted" autocomplete="off" />
+          <span class="hint">Sin separadores de miles; hasta 2 decimales (ej. 183500 o 183500.50).</span>
+        </div>
+        <div class="field field--full">
+          <label class="label" for="cs-note">Nota</label>
+          <input id="cs-note" class="input" type="text" formControlName="note" maxlength="500" autocomplete="off" />
+        </div>
+      </form>
+    }
+
+    @if (step() === 'confirm') {
+      <p>
+        ¿Cerrar el turno con <strong>{{ formatCop(counted()) }}</strong> contados?
+      </p>
+      <p class="hint">Un turno cerrado no se puede modificar ni reabrir.</p>
+    }
+
+    @if (step() === 'result') {
+      <p class="acc-toast" role="status">Turno cerrado.</p>
+      @if (result(); as shift) {
+        <app-shift-result [shift]="shift" />
+      }
+    }
+  }
+
+  <div modal-footer>
+      @switch (step()) {
+        @case ('count') {
+          <button type="button" class="btn btn--outline" (click)="dismiss()">Cancelar</button>
+          <button type="button" class="btn btn--primary" (click)="review()">Continuar</button>
+        }
+        @case ('confirm') {
+          <button type="button" class="btn btn--outline" [disabled]="submitting()" (click)="back()">Volver</button>
+          <button type="button" class="btn btn--danger" [disabled]="submitting()" (click)="close()">
+            {{ submitting() ? 'Cerrando…' : 'Cerrar turno' }}
+          </button>
+        }
+        @case ('result') {
+          <button type="button" class="btn btn--primary" (click)="dismiss()">Listo</button>
+        }
+      }
+  </div>
+</app-modal>
