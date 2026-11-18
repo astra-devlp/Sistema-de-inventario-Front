@@ -49,9 +49,9 @@ describe('guards', () => {
       auth.setUser(userWith('Administrador'));
       expect(run(roleGuard('Administrador'))).toBe(true);
       auth.setUser(userWith('Supervisor'));
-      expect(run(roleGuard('Administrador'))).toBe('/productos');
+      expect(run(roleGuard('Administrador'))).toBe('/venta');
       auth.setUser(userWith('Usuario'));
-      expect(run(roleGuard('Administrador'))).toBe('/productos');
+      expect(run(roleGuard('Administrador'))).toBe('/venta');
     });
 
     it('plataforma no entra a las pantallas de empresa y vuelve a la suya', () => {
@@ -63,7 +63,7 @@ describe('guards', () => {
     it('los roles de empresa no entran a la pantalla de plataforma', () => {
       for (const role of ['Administrador', 'Supervisor', 'Usuario'] as UserRole[]) {
         auth.setUser(userWith(role));
-        expect(run(roleGuard('Administrador de plataforma'))).toBe('/productos');
+        expect(run(roleGuard('Administrador de plataforma'))).toBe('/venta');
       }
     });
   });
@@ -86,7 +86,7 @@ describe('guards', () => {
     it('solo deja entrar con sesión y plan vencido', () => {
       expect(run(planExpiredGuard)).toBe('/login');
       auth.setUser(userWith('Usuario'));
-      expect(run(planExpiredGuard)).toBe('/productos');
+      expect(run(planExpiredGuard)).toBe('/venta');
       auth.setPlanExpired(true);
       expect(run(planExpiredGuard)).toBe(true);
     });

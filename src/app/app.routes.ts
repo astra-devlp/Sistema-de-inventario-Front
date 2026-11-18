@@ -42,6 +42,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/stock/stock.routes').then((m) => m.STOCK_ROUTES),
       },
       {
+        path: 'venta',
+        canActivate: [roleGuard(...COMPANY_ROLES)],
+        loadChildren: () => import('./features/sales/sales.routes').then((m) => m.SALES_ROUTES),
+      },
+      {
         path: 'turno',
         canActivate: [roleGuard(...COMPANY_ROLES)],
         loadChildren: () => import('./features/cash-shift/shift.routes').then((m) => m.SHIFT_ROUTES),

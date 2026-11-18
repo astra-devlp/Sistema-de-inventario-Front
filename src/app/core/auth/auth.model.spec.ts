@@ -31,8 +31,8 @@ describe('roles', () => {
 
   it('plataforma entra a su pantalla y los roles de empresa a Productos', () => {
     expect(homePathForRole('Administrador de plataforma')).toBe('/plataforma');
-    for (const role of COMPANY_ROLES) expect(homePathForRole(role)).toBe('/productos');
-    expect(homePathForRole(null)).toBe('/productos');
+    for (const role of COMPANY_ROLES) expect(homePathForRole(role)).toBe('/venta');
+    expect(homePathForRole(null)).toBe('/venta');
   });
 });
 

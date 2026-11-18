@@ -63,3 +63,36 @@ export function formatCop(value: string | null | undefined): string {
 export function absMoney(value: string): string {
   return value.trim().replace(/^-/, '');
 }
+
+/**
+ * Formatea mientras se escribe un campo de dinero: `50000` se ve `$ 50.000`. Solo cuenta los dígitos y una coma o
+ * punto decimal (hasta 2 decimales); los puntos de miles que ya estén puestos se ignoran al reformatear.
+ */
+export function moneyInputDisplay(raw: string): string {
+  const clean = moneyInputValue(raw);
+  if (clean === '') return '';
+  const [int, frac] = clean.split('.');
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `$ ${grouped}${frac !== undefined ? `,${frac}` : ''}`;
+}
+
+/**
+ * Cadena limpia para enviar a la API (`"$ 50.000,50"` → `"50000.50"`). En lo que se escribe, la coma es el decimal
+ * y el punto es de miles; un punto solo al final con 1 o 2 dígitos (`"1500.5"`) se toma como decimal.
+ */
+export function moneyInputValue(raw: string): string {
+  let text = raw.replace(/[^\d.,]/g, '');
+  if (text === '') return '';
+  if (!text.includes(',')) {
+    const dot = text.lastIndexOf('.');
+    // «1500.5» o «1500.50»: punto decimal; «50.000»: punto de miles.
+    text = dot !== -1 && /^\d{1,2}$/.test(text.slice(dot + 1)) ? `${text.slice(0, dot).replace(/\./g, '')},${text.slice(dot + 1)}` : text.replace(/\./g, '');
+  } else {
+    const comma = text.indexOf(',');
+    text = `${text.slice(0, comma).replace(/\./g, '')},${text.slice(comma + 1).replace(/[.,]/g, '')}`;
+  }
+  const [int, frac] = text.split(',');
+  const cleanInt = int.replace(/^0+(?=\d)/, '') || '0';
+  if (frac === undefined) return cleanInt;
+  return `${cleanInt}.${frac.slice(0, 2)}`;
+}

@@ -32,7 +32,7 @@ export function roleLabel(role: UserRole): string {
  * el administrador de plataforma, a su pantalla (la API de negocio le responde 403).
  */
 export function homePathForRole(role: UserRole | null | undefined): string {
-  return role === PLATFORM_ROLE ? '/plataforma' : '/productos';
+  return role === PLATFORM_ROLE ? '/plataforma' : '/venta';
 }
 
 /** Texto bajo el nombre en UI (topbar, Mi cuenta): «Empresa · Rol». */

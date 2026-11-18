@@ -66,3 +66,12 @@ export function parseQuantity(raw: string, unitType: UnitType | null | undefined
   }
   return { ok: true, value };
 }
+
+/** Suma dos cantidades decimales sin pasar por `number` (`"0.1" + "1"` → `"1.1"`). */
+export function addQuantity(a: string, b: string): string {
+  const sum = toMilli(normalize(a)) + toMilli(normalize(b));
+  const text = sum.toString().padStart(QUANTITY_DECIMALS + 1, '0');
+  const int = text.slice(0, -QUANTITY_DECIMALS);
+  const frac = text.slice(-QUANTITY_DECIMALS).replace(/0+$/, '');
+  return frac ? `${int}.${frac}` : int;
+}

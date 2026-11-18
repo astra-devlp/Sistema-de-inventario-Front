@@ -1,4 +1,4 @@
-import { absMoney, formatCop, isNegativeMoney, isZeroMoney, parseMoney } from './money';
+import { absMoney, formatCop, isNegativeMoney, isZeroMoney, moneyInputDisplay, moneyInputValue, parseMoney } from './money';
 
 function value(raw: string): string {
   const result = parseMoney(raw);
@@ -70,5 +70,38 @@ describe('formatCop y signos', () => {
     expect(isZeroMoney('-0.00')).toBe(true);
     expect(isZeroMoney('0.01')).toBe(false);
     expect(absMoney('-500.00')).toBe('500.00');
+  });
+});
+
+describe('campos de dinero (formato al escribir)', () => {
+  it('50000 se ve $ 50.000 y se envía 50000', () => {
+    expect(moneyInputDisplay('50000')).toBe('$ 50.000');
+    expect(moneyInputValue('50000')).toBe('50000');
+  });
+
+  it('reformatea lo ya formateado sin duplicar separadores', () => {
+    expect(moneyInputDisplay('$ 50.000')).toBe('$ 50.000');
+    expect(moneyInputValue('$ 50.000')).toBe('50000');
+    expect(moneyInputDisplay('$ 1.234.567')).toBe('$ 1.234.567');
+  });
+
+  it('la coma es el decimal, con hasta 2 decimales', () => {
+    expect(moneyInputDisplay('1500,5')).toBe('$ 1.500,5');
+    expect(moneyInputValue('1500,50')).toBe('1500.50');
+    expect(moneyInputValue('1500,505')).toBe('1500.50');
+    expect(moneyInputValue('$ 1.500,50')).toBe('1500.50');
+  });
+
+  it('un punto al final con 1 o 2 dígitos es decimal; con 3 es de miles', () => {
+    expect(moneyInputValue('1500.5')).toBe('1500.50'.replace(/0$/, ''));
+    expect(moneyInputValue('1500.50')).toBe('1500.50');
+    expect(moneyInputValue('1.500')).toBe('1500');
+  });
+
+  it('vacío, letras y ceros a la izquierda', () => {
+    expect(moneyInputDisplay('')).toBe('');
+    expect(moneyInputValue('abc')).toBe('');
+    expect(moneyInputValue('0050')).toBe('50');
+    expect(moneyInputDisplay('0')).toBe('$ 0');
   });
 });
