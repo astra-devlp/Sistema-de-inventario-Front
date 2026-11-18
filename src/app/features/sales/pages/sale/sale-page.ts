@@ -21,12 +21,13 @@ import { PosProduct, Sale } from '../../sale.model';
 import { SalesApi } from '../../sales.api';
 import { ChargeModal, ChargeRequest } from './charge-modal';
 import { Receipt } from './receipt';
+import { SaleDetail } from './sale-detail';
 
 type UnitTypes = Map<number, 'Cantidad' | 'Peso' | 'Volumen' | 'Longitud'>;
 
 @Component({
   selector: 'app-sale-page',
-  imports: [DatePipe, FormsModule, PageHeader, ChargeModal, Receipt, ConfirmModal],
+  imports: [DatePipe, FormsModule, PageHeader, ChargeModal, Receipt, ConfirmModal, SaleDetail],
   templateUrl: './sale-page.html',
 })
 export class SalePage {

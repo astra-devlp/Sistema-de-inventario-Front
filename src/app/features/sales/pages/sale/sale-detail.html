@@ -1,0 +1,104 @@
+<section class="sale__detail">
+  <div class="sale__badges">
+    @if (isVoided()) {
+      <span class="badge badge--danger">Anulada</span>
+    } @else {
+      <span class="badge badge--success">Completada</span>
+    }
+    @if (sale().fully_returned) {
+      <span class="badge badge--info">Devuelta</span>
+    }
+    @if (sale().return_window_expired) {
+      <span class="badge badge--warning">Plazo de devolución vencido</span>
+    }
+  </div>
+
+  @if (notice()) {
+    <p class="acc-toast" role="status">{{ notice() }}</p>
+  }
+
+  @if (isVoided()) {
+    <p class="auth-error" role="status">
+      Anulada el {{ sale().voided_at | date: 'dd/MM/yyyy HH:mm' : bogota }} por {{ who(sale().voided_by_user_id) }},
+      autorizada por {{ who(sale().void_authorized_by_user_id) }}.
+      @if (sale().void_reason) {
+        Motivo: {{ sale().void_reason }}
+      }
+    </p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Producto</th><th>Vendido</th><th>Devuelto</th></tr>
+      </thead>
+      <tbody>
+        @for (line of sale().lines; track line.id) {
+          <tr>
+            <td>{{ line.product_name }}</td>
+            <td>{{ formatQuantity(line.quantity) }}</td>
+            <td>{{ formatQuantity(line.returned_quantity) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Pago</th><th>Aplicado</th><th>Devuelto</th></tr>
+      </thead>
+      <tbody>
+        @for (payment of sale().payments; track payment.method) {
+          <tr>
+            <td>{{ labels[payment.method] }}</td>
+            <td>{{ formatCop(payment.amount) }}</td>
+            <td>{{ formatCop(payment.refunded_amount) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="charge__subtitle">Devoluciones de esta venta</h3>
+  @if (returnsError()) {
+    <p class="auth-error" role="alert">{{ returnsError() }}</p>
+  } @else if (returns().length === 0) {
+    <p class="hint">Sin devoluciones.</p>
+  } @else {
+    <ul class="charge__results">
+      @for (r of returns(); track r.id) {
+        <li>
+          <button type="button" class="charge__pick" (click)="openReturn(r.id)">
+            <span>{{ r.return_code }} · {{ r.created_at | date: 'dd/MM/yyyy HH:mm' : bogota }}</span>
+            <span>{{ formatCop(r.total) }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="sale__receipt-actions">
+    <button type="button" class="btn btn--primary" (click)="returnOpen.set(true)">Devolver</button>
+    <button type="button" class="btn btn--danger" (click)="voidOpen.set(true)">Anular</button>
+  </div>
+</section>
+
+<app-void-modal [open]="voidOpen()" [sale]="sale()" (closed)="voidOpen.set(false)" (voided)="onVoided($event)" (stale)="refresh()" />
+<app-return-modal [open]="returnOpen()" [sale]="sale()" [returns]="returns()" (closed)="returnOpen.set(false)" (done)="onReturned($event)" />
+
+<app-modal [open]="viewing() !== null" title="Comprobante de devolución" (closed)="viewing.set(null)">
+  @if (viewingNote()) {
+    <p class="acc-toast" role="status">{{ viewingNote() }}</p>
+  }
+  @if (viewing(); as r) {
+    <div class="return-view">
+      <app-return-receipt [saleReturn]="r" />
+    </div>
+  }
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="viewing.set(null)">Cerrar</button>
+    <button type="button" class="btn btn--primary" (click)="print()">Imprimir</button>
+  </div>
+</app-modal>

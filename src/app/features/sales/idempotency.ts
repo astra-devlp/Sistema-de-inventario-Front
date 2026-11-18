@@ -33,15 +33,18 @@ export function newIdempotencyKey(): string {
  * tras un fallo de red o un 5xx): con otro contenido el back responde 409 a la clave repetida, así que si el carrito
  * o los pagos cambian se genera una nueva. Tras una venta confirmada se renueva.
  */
-export class IdempotencyKeys {
+export class IdempotencyKeys<T = Body> {
   private key: string | null = null;
   private fingerprint: string | null = null;
 
-  constructor(private readonly generate: () => string = newIdempotencyKey) {}
+  constructor(
+    private readonly generate: () => string = newIdempotencyKey,
+    private readonly fingerprintOf: (body: T) => string = requestFingerprint as unknown as (body: T) => string,
+  ) {}
 
   /** La clave para enviar este cuerpo. */
-  keyFor(body: Body): string {
-    const fingerprint = requestFingerprint(body);
+  keyFor(body: T): string {
+    const fingerprint = this.fingerprintOf(body);
     if (this.key === null || this.fingerprint !== fingerprint) {
       this.key = this.generate();
       this.fingerprint = fingerprint;
@@ -49,9 +52,27 @@ export class IdempotencyKeys {
     return this.key;
   }
 
-  /** Venta confirmada (201 o 200): la siguiente venta empieza con una clave nueva. */
+  /** Operación confirmada (201 o 200): la siguiente empieza con una clave nueva. */
   renew(): void {
     this.key = null;
     this.fingerprint = null;
   }
+}
+
+/** Contenido de una devolución, sin la autorización: quién autoriza no cambia la petición. */
+export interface ReturnBody {
+  sale_id: number;
+  items: { sale_line_id: number; quantity: string; restock: boolean }[];
+  refunds: { method: string; amount: string }[];
+  reason: string;
+}
+
+/** Huella como `return_request_hash` del back: cantidades y montos normalizados, motivo sin espacios de los bordes. */
+export function returnFingerprint(body: ReturnBody): string {
+  return JSON.stringify({
+    sale_id: body.sale_id,
+    items: body.items.map((item) => [item.sale_line_id, quantityKey(item.quantity), item.restock]),
+    refunds: body.refunds.map((refund) => [refund.method, centsToMoney(moneyToCents(refund.amount))]).sort((a, b) => a[0].localeCompare(b[0])),
+    reason: body.reason.trim(),
+  });
 }

@@ -226,6 +226,27 @@
   font-weight: 700;
 }
 
+.sale__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.sale__receipt app-sale-detail {
+  align-self: stretch;
+}
+
+.sale__badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.return__table td {
+  vertical-align: top;
+}
+
 @media (max-width: 900px) {
   .sale {
     grid-template-columns: minmax(0, 1fr);
@@ -254,6 +275,24 @@
   .receipt,
   .receipt * {
     visibility: visible !important;
+  }
+
+  body:has(.return-view) .sale__receipt .receipt {
+    display: none !important;
+  }
+
+  .modal-backdrop,
+  .modal,
+  .modal__body {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    max-height: none !important;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
   }
 
   .receipt {

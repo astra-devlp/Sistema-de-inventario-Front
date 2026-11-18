@@ -64,6 +64,8 @@ export interface SaleLine {
   line_base: string;
   line_tax: string;
   line_total: string;
+  /** Cantidad ya devuelta: se puede devolver `quantity − returned_quantity`. */
+  returned_quantity: string;
 }
 
 export interface SalePayment {
@@ -73,6 +75,8 @@ export interface SalePayment {
   /** Efectivo entregado por el cliente. */
   received: string | null;
   reference: string | null;
+  /** Ya devuelto por este medio: se puede devolver `amount − refunded_amount`. */
+  refunded_amount: string;
 }
 
 export interface TaxSummary {
@@ -101,6 +105,13 @@ export interface Sale {
   change_amount: string;
   taxes: TaxSummary[];
   voided_at: string | null;
+  voided_by_user_id: number | null;
+  void_authorized_by_user_id: number | null;
+  void_reason: string | null;
+  /** Todos los renglones devueltos por completo: la venta sigue `completada`. */
+  fully_returned: boolean;
+  /** Pasó el plazo de devolución: solo un Administrador autoriza. */
+  return_window_expired: boolean;
 }
 
 /** 201: venta nueva. 200: la misma venta ya creada (reintento con la misma clave). */

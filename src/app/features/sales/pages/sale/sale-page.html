@@ -91,6 +91,7 @@
             <button type="button" class="btn btn--outline" (click)="newSale()">Nueva venta</button>
           </div>
           <app-receipt [sale]="r" />
+          <app-sale-detail [sale]="r" (changed)="receipt.set($event)" />
         </div>
       } @else {
         <div class="card">

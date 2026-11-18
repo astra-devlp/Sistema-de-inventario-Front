@@ -75,3 +75,13 @@ export function addQuantity(a: string, b: string): string {
   const frac = text.slice(-QUANTITY_DECIMALS).replace(/0+$/, '');
   return frac ? `${int}.${frac}` : int;
 }
+
+/** Resta `b` de `a` sin pasar por `number`; si `b` es mayor, el resultado es `"0"` (lo que queda por devolver, nunca negativo). */
+export function subtractQuantity(a: string, b: string): string {
+  const diff = toMilli(normalize(a)) - toMilli(normalize(b));
+  if (diff <= 0n) return '0';
+  const text = diff.toString().padStart(QUANTITY_DECIMALS + 1, '0');
+  const int = text.slice(0, -QUANTITY_DECIMALS);
+  const frac = text.slice(-QUANTITY_DECIMALS).replace(/0+$/, '');
+  return frac ? `${int}.${frac}` : int;
+}
