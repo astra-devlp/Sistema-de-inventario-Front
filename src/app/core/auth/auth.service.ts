@@ -1,42 +1,57 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpContextToken, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, firstValueFrom, of, retry, tap, throwError, timer } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
 import { AuthUser, LoginResponse, PLATFORM_ADMIN_ROLES, homePathForRole } from './auth.model';
 
-const TOKEN_KEY = 'inventario.token';
-const USER_KEY = 'inventario.user';
+/** Claves de la versión anterior, que guardaba el token en el navegador. Se borran al iniciar. */
+const LEGACY_KEYS = ['inventario.token', 'inventario.user'];
 
-/** Lee `exp` (segundos) del JWT sin verificarlo: la firma la valida siempre el backend. */
-function tokenExpiresAt(token: string): number | null {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
-  } catch {
-    return null;
-  }
-}
+/** Peticiones cuyo 401 no debe mandar al login con aviso de "sesión vencida". */
+export const SKIP_SESSION_REDIRECT = new HttpContextToken<boolean>(() => false);
 
+/**
+ * La sesión vive en una cookie httpOnly que pone la API: el JavaScript no puede leer el token.
+ * Aquí solo se guarda en memoria el usuario actual, que se pide a `/users/me` al abrir la app.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly current = signal<AuthUser | null>(this.readUser());
+  private readonly current = signal<AuthUser | null>(null);
 
   readonly user = this.current.asReadonly();
 
-  token(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+  /** Recupera la sesión desde la cookie. La llama el inicializador de la app antes de enrutar. */
+  restore(): Promise<void> {
+    for (const key of LEGACY_KEYS) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Almacenamiento bloqueado: no hay nada que limpiar.
+      }
+    }
+
+    const me$ = this.http
+      .get<AuthUser>(`${API_URL}/users/me`, {
+        context: new HttpContext().set(SKIP_SESSION_REDIRECT, true),
+      })
+      .pipe(
+        // El servidor gratuito puede estar despertando: reintenta si el proxy agota el tiempo.
+        retry({
+          count: 2,
+          delay: (error: unknown) =>
+            error instanceof HttpErrorResponse && [502, 503, 504].includes(error.status)
+              ? timer(3000)
+              : throwError(() => error),
+        }),
+        catchError(() => of(null)),
+      );
+
+    return firstValueFrom(me$).then((user) => this.current.set(user));
   }
 
   isLoggedIn(): boolean {
-    const token = this.token();
-    if (token === null || this.current() === null) return false;
-    const expiresAt = tokenExpiresAt(token);
-    if (expiresAt !== null && expiresAt <= Date.now()) {
-      this.logout();
-      return false;
-    }
-    return true;
+    return this.current() !== null;
   }
 
   /** Administradores de la plataforma: ven el panel Administración → Cuentas. */
@@ -62,35 +77,27 @@ export class AuthService {
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${API_URL}/users/login`, { email, password })
-      .pipe(tap((response) => this.persist(response)));
+      .pipe(tap((response) => this.current.set(response.user)));
   }
 
+  /** Cierra la sesión en la API (borra la cookie) y en la app. */
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    this.clearSession();
+    this.http
+      .post(`${API_URL}/users/logout`, null, {
+        context: new HttpContext().set(SKIP_SESSION_REDIRECT, true),
+      })
+      .subscribe({ error: () => undefined });
+  }
+
+  /** Olvida el usuario en la app sin llamar a la API (la sesión ya venció). */
+  clearSession(): void {
     this.current.set(null);
   }
 
-  /** Actualiza el usuario guardado en sesión (por ejemplo tras editar la cuenta). */
+  /** Actualiza el usuario en sesión (por ejemplo tras editar la cuenta). */
   setUser(user: AuthUser): void {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
     this.current.set(user);
-  }
-
-  private persist(response: LoginResponse): void {
-    localStorage.setItem(TOKEN_KEY, response.access_token);
-    localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-    this.current.set(response.user);
-  }
-
-  private readUser(): AuthUser | null {
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw || !localStorage.getItem(TOKEN_KEY)) return null;
-    try {
-      return JSON.parse(raw) as AuthUser;
-    } catch {
-      return null;
-    }
   }
 }
 
