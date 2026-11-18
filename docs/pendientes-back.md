@@ -40,3 +40,8 @@ dice el contrato.
 Solo la caja usa las sedes asignadas (`PUT /users/{id}/locations`). `GET /stock` y los movimientos devuelven todas
 las sedes a cualquier usuario de la empresa. La pantalla de stock limita el selector a las sedes asignadas
 (Administrador: todas), pero es una restricción de pantalla: la API no la impone.
+
+## 6. El turno debería traer el nombre del cajero
+
+`ShiftResponseSchema` solo trae `user_id` y `closed_by_user_id`. Un Supervisor que no puede listar usuarios ve «Usuario
+#id» en la lista de turnos. Convendría incluir el nombre del dueño y de quien cerró (`user_name`, `closed_by_name`).
