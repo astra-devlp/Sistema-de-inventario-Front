@@ -28,3 +28,15 @@ seed de demo cree el usuario en la misma base de demo, por ejemplo `plataforma@d
 `DELETE /customers/{id}` responde 409 cuando el cliente tiene ventas, pero el cliente no tiene `is_active` ni
 otro modo de «desactivarlo»; solo se puede conservar. Usuarios y productos sí tienen `is_active`. Si se quiere
 ofrecer «desactivar» también en clientes, hace falta ese campo.
+
+## 4. Un Cajero puede registrar entradas de stock
+
+`POST /stock/entries` lo acepta de cualquier usuario de la empresa, incluido el rol `Usuario` (Cajero). Decidir si
+debe ser solo `Administrador` y `Supervisor`. Mientras tanto el front ofrece «Entrada» a los tres roles, tal como
+dice el contrato.
+
+## 5. El stock no se restringe por sede asignada
+
+Solo la caja usa las sedes asignadas (`PUT /users/{id}/locations`). `GET /stock` y los movimientos devuelven todas
+las sedes a cualquier usuario de la empresa. La pantalla de stock limita el selector a las sedes asignadas
+(Administrador: todas), pero es una restricción de pantalla: la API no la impone.
