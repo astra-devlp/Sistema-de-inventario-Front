@@ -13,12 +13,15 @@ describe('menú por rol', () => {
     expect(ids('Administrador de plataforma')).toEqual(['platform']);
   });
 
-  it('el Administrador de la empresa ve Productos, Clientes, Sedes y Usuarios', () => {
-    expect(ids('Administrador')).toEqual(['sales', 'products', 'stock', 'shift', 'customers', 'locations', 'users']);
+  it('el Administrador de la empresa ve Productos, Informe diario, Clientes, Sedes y Usuarios', () => {
+    expect(ids('Administrador')).toEqual(['sales', 'products', 'stock', 'shift', 'reports', 'customers', 'locations', 'users']);
   });
 
-  it('el Supervisor y el Cajero ven Productos, Clientes y Sedes, no Usuarios ni Plataforma', () => {
-    expect(ids('Supervisor')).toEqual(['sales', 'products', 'stock', 'shift', 'customers', 'locations']);
+  it('el Supervisor ve el Informe diario pero no Usuarios ni Plataforma', () => {
+    expect(ids('Supervisor')).toEqual(['sales', 'products', 'stock', 'shift', 'reports', 'customers', 'locations']);
+  });
+
+  it('el Cajero no ve el Informe diario, ni Usuarios ni Plataforma', () => {
     expect(ids('Usuario')).toEqual(['sales', 'products', 'stock', 'shift', 'customers', 'locations']);
   });
 
@@ -46,7 +49,7 @@ describe('enlaces del menú', () => {
   });
 
   it('las rutas de negocio y de plataforma están protegidas por rol', () => {
-    for (const path of ['plataforma', 'venta', 'productos', 'stock', 'turno', 'clientes', 'sedes', 'usuarios']) {
+    for (const path of ['plataforma', 'venta', 'productos', 'stock', 'turno', 'informes', 'clientes', 'sedes', 'usuarios']) {
       const route = layout?.children?.find((child) => child.path === path);
       expect(route?.canActivate?.length, `${path} sin guard de rol`).toBeGreaterThan(0);
     }

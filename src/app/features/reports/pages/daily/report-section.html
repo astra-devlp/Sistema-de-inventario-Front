@@ -1,0 +1,51 @@
+<div class="table-wrap">
+  <table class="table report__table">
+    @if (caption()) {
+      <caption class="sr-only">{{ caption() }}</caption>
+    }
+    <thead>
+      <tr>
+        <th></th>
+        <th class="report__num">Cantidad</th>
+        @for (method of methods; track method) {
+          <th class="report__num">{{ labels[method] }}</th>
+        }
+        <th class="report__num">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Ventas</th>
+        <td class="report__num">{{ section().sales.count }}</td>
+        @for (method of methods; track method) {
+          <td class="report__num">{{ formatCop(section().sales.by_method[method]) }}</td>
+        }
+        <td class="report__num">{{ formatCop(section().sales.total) }}</td>
+      </tr>
+      <tr>
+        <th scope="row">Anulaciones</th>
+        <td class="report__num">{{ section().voids.count }}</td>
+        @for (method of methods; track method) {
+          <td class="report__num">{{ formatCop(section().voids.by_method[method]) }}</td>
+        }
+        <td class="report__num">{{ formatCop(section().voids.total) }}</td>
+      </tr>
+      <tr>
+        <th scope="row">Devoluciones</th>
+        <td class="report__num">{{ section().returns.count }}</td>
+        @for (method of methods; track method) {
+          <td class="report__num">{{ formatCop(section().returns.by_method[method]) }}</td>
+        }
+        <td class="report__num">{{ formatCop(section().returns.total) }}</td>
+      </tr>
+      <tr class="report__net">
+        <th scope="row">Neto</th>
+        <td class="report__num"></td>
+        @for (method of methods; track method) {
+          <td class="report__num">{{ formatCop(section().net.by_method[method]) }}</td>
+        }
+        <td class="report__num">{{ formatCop(section().net.total) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,73 @@
+/* Informe diario: filtros, bloques por sede/caja/turno y tablas de montos alineados a la derecha. */
+.report__filters {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.report__date {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.report__error {
+  margin-bottom: var(--space-4);
+}
+
+.report__block {
+  margin-bottom: var(--space-4);
+}
+
+.report__block > .hint,
+.report__block > .business-profile,
+.report__group {
+  margin: var(--space-4);
+}
+
+.report__group + .report__group {
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.report__note {
+  margin-top: var(--space-2);
+}
+
+.report__shift-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.report__shift-head .charge__subtitle {
+  margin: 0;
+}
+
+.report__table th,
+.report__table td {
+  white-space: nowrap;
+}
+
+.report__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.report__net th,
+.report__net td {
+  font-weight: 700;
+}
+
+.report__badge {
+  margin-left: var(--space-2);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

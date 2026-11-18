@@ -52,6 +52,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/cash-shift/shift.routes').then((m) => m.SHIFT_ROUTES),
       },
       {
+        path: 'informes',
+        canActivate: [roleGuard('Administrador', 'Supervisor')],
+        loadChildren: () => import('./features/reports/reports.routes').then((m) => m.REPORTS_ROUTES),
+      },
+      {
         path: 'clientes',
         canActivate: [roleGuard(...COMPANY_ROLES)],
         loadChildren: () => import('./features/customers/customers.routes').then((m) => m.CUSTOMERS_ROUTES),

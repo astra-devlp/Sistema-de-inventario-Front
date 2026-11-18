@@ -1,0 +1,147 @@
+<app-page-header
+  title="Informe diario"
+  subtitle="Ventas, devoluciones y anulaciones del día por medio de pago, con el desglose por caja y por turno."
+/>
+
+@if (loadingLocations()) {
+  <p class="text-muted">Cargando…</p>
+} @else if (withoutLocation()) {
+  <p class="auth-error" role="status">{{ noLocationMessage }}</p>
+} @else {
+  <section class="card report__filters">
+    <div class="form-grid">
+      <div class="field">
+        <label class="label" for="rp-location">Sede</label>
+        <select id="rp-location" class="select" (change)="onLocation($event)">
+          @for (location of options(); track location.id) {
+            <option [value]="location.id" [selected]="location.id === locationId()">
+              {{ location.name }}{{ location.is_active ? '' : ' (inactiva)' }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="rp-date">Fecha (hora de Bogotá)</label>
+        <div class="report__date">
+          <input id="rp-date" class="input" type="date" [value]="date()" (change)="onDate($event)" />
+          @if (date() !== today) {
+            <button type="button" class="btn btn--outline" (click)="goToday()">Hoy</button>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="auth-error report__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="text-muted">Cargando informe…</p>
+  } @else if (report(); as r) {
+    <section class="card report__block">
+      <div class="toolbar">
+        <h2 class="acc-panel__title">{{ r.location_name }} · {{ r.date }}</h2>
+      </div>
+      @if (empty()) {
+        <p class="hint report__note">Sin movimientos este día: todo en cero.</p>
+      }
+      <app-report-section [section]="r" caption="Total de la sede" />
+      <p class="hint report__note">{{ cashNote }}</p>
+    </section>
+
+    <section class="card report__block">
+      <div class="toolbar"><h2 class="acc-panel__title">Turnos cerrados este día</h2></div>
+      <dl class="business-profile report__closed">
+        <div class="business-profile__item">
+          <dt>Turnos cerrados</dt>
+          <dd>{{ r.closed_shifts_count }}</dd>
+        </div>
+        <div class="business-profile__item">
+          <dt>Diferencia de los turnos cerrados este día</dt>
+          <dd>
+            {{ formatCop(r.closed_shifts_difference) }}
+            @if (r.closed_shifts_count > 0) {
+              <span class="badge report__badge">{{ differenceLabel(r.closed_shifts_difference) }}</span>
+            }
+          </dd>
+        </div>
+      </dl>
+      <p class="hint report__note">{{ closedNote }}</p>
+    </section>
+
+    <section class="card report__block">
+      <div class="toolbar"><h2 class="acc-panel__title">Por caja</h2></div>
+      @if (r.registers.length === 0) {
+        <p class="hint report__note">Ninguna caja tuvo movimientos este día.</p>
+      }
+      @for (register of r.registers; track register.cash_register_id) {
+        <div class="report__group">
+          <h3 class="charge__subtitle">{{ register.code }} · {{ register.name }}</h3>
+          <app-report-section [section]="register" [caption]="'Caja ' + register.code" />
+        </div>
+      }
+    </section>
+
+    <section class="card report__block">
+      <div class="toolbar"><h2 class="acc-panel__title">Por turno</h2></div>
+      @if (anyCrossesMidnight()) {
+        <p class="hint report__note">{{ midnightNote }}</p>
+      }
+      @if (r.shifts.length === 0) {
+        <p class="hint report__note">Ningún turno tocó este día.</p>
+      }
+      @for (shift of r.shifts; track shift.shift_id) {
+        <div class="report__group">
+          <div class="report__shift-head">
+            <h3 class="charge__subtitle">{{ shiftTitle(shift) }}</h3>
+            <span
+              class="badge"
+              [class.badge--success]="isOpen(shift)"
+              [class.badge--info]="!isOpen(shift) && !shift.forced_close"
+              [class.badge--warning]="shift.forced_close"
+            >
+              {{ shiftState(shift) }}
+            </span>
+            @if (shift.crosses_midnight) {
+              <span class="badge badge--warning">Cruza la medianoche</span>
+            }
+          </div>
+          <p class="hint report__note">
+            Abierto {{ shift.opened_at | date: 'dd/MM/yyyy HH:mm' : bogota }}
+            @if (shift.closed_at) {
+              · Cerrado {{ shift.closed_at | date: 'dd/MM/yyyy HH:mm' : bogota }}
+            }
+          </p>
+          <app-report-section [section]="shift" [caption]="'Turno ' + shift.shift_id" />
+          <dl class="business-profile report__cash">
+            <div class="business-profile__item">
+              <dt>Base de apertura</dt>
+              <dd>{{ formatCop(shift.opening_cash) }}</dd>
+            </div>
+            <div class="business-profile__item">
+              <dt>Esperado (turno completo)</dt>
+              <dd>{{ shift.expected_cash === null ? openLabel : formatCop(shift.expected_cash) }}</dd>
+            </div>
+            <div class="business-profile__item">
+              <dt>Contado (turno completo)</dt>
+              <dd>{{ shift.counted_cash === null ? openLabel : formatCop(shift.counted_cash) }}</dd>
+            </div>
+            <div class="business-profile__item">
+              <dt>Diferencia (turno completo)</dt>
+              <dd>
+                {{ shift.difference === null ? openLabel : formatCop(shift.difference) }}
+                @if (differenceLabel(shift.difference); as label) {
+                  <span class="badge report__badge">{{ label }}</span>
+                }
+              </dd>
+            </div>
+          </dl>
+          @if (shift.expected_cash !== null) {
+            <p class="hint report__note">{{ fullShiftNote }}</p>
+          }
+        </div>
+      }
+    </section>
+  }
+}
