@@ -63,6 +63,39 @@
           </button>
         </div>
       </div>
+
+      @if (isCompanyAdmin()) {
+        <div class="cfg-panel cfg-panel--side">
+          <div class="cfg-panel__head">
+            <h2 class="cfg-panel__title">IVA por defecto</h2>
+            <p class="cfg-panel__sub">
+              Se propone en los productos nuevos de tu empresa. Las tarifas las define la plataforma.
+            </p>
+          </div>
+          <div class="cfg-panel__body">
+            @if (taxError()) {
+              <p class="auth-error" role="alert">{{ taxError() }}</p>
+            }
+            @if (taxMessage()) {
+              <p class="cfg-toast" role="status">{{ taxMessage() }}</p>
+            }
+            <div class="field">
+              <label class="label" for="cfg-default-tax">Tarifa</label>
+              <select id="cfg-default-tax" class="select" (change)="onDefaultTax($event)">
+                <option value="" [selected]="defaultTaxId() === null">Sin elegir</option>
+                @for (tax of taxes(); track tax.id) {
+                  <option [value]="tax.id" [selected]="tax.id === defaultTaxId()">{{ taxLabel(tax) }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="cfg-panel__foot">
+            <button type="button" class="btn btn--primary btn--block" [disabled]="defaultTaxId() === null || savingTax()" (click)="saveDefaultTax()">
+              {{ savingTax() ? 'Guardando…' : 'Guardar IVA por defecto' }}
+            </button>
+          </div>
+        </div>
+      }
     </aside>
 
     <div class="cfg-main">

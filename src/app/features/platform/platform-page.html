@@ -1,15 +1,32 @@
 <app-page-header
   title="Plataforma"
-  subtitle="Operación del software: empresas, planes, unidades de medida y tarifas de IVA."
+  subtitle="Operación del software: empresas y planes, unidades de medida y tarifas de IVA."
 />
 
-<section class="card">
-  <div class="empty-state">
-    <p class="empty-state__title">Estas operaciones todavía se hacen desde la documentación de la API</p>
-    <p class="text-muted">
-      Abre <code>/docs</code> del servidor, entra con tu cuenta de plataforma y usa los endpoints
-      <code>/platform/companies</code>, <code>/platform/units</code> y <code>/platform/taxes</code>. El administrador de
-      plataforma no usa las pantallas de productos, clientes ni caja: la API le responde 403 en esos datos.
-    </p>
-  </div>
-</section>
+<div class="platform__tabs" role="tablist" aria-label="Secciones de plataforma">
+  @for (item of tabs; track item.id) {
+    <button
+      type="button"
+      role="tab"
+      class="btn"
+      [class.btn--primary]="tab() === item.id"
+      [class.btn--outline]="tab() !== item.id"
+      [attr.aria-selected]="tab() === item.id"
+      (click)="tab.set(item.id)"
+    >
+      {{ item.label }}
+    </button>
+  }
+</div>
+
+@switch (tab()) {
+  @case ('companies') {
+    <app-companies-panel />
+  }
+  @case ('units') {
+    <app-units-panel />
+  }
+  @case ('taxes') {
+    <app-taxes-panel />
+  }
+}

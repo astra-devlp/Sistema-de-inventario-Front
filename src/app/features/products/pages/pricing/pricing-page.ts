@@ -7,15 +7,12 @@ import { CatalogApi } from '../../catalog.api';
 import { PRICE_LISTS, Presentation, Price, PriceList, ProductOption, Tax, taxLabel } from '../../catalog.model';
 import { formatMoney } from '../../products.model';
 import { PriceFormModal } from './modals/price-form-modal';
-import { TaxFormModal } from './modals/tax-form-modal';
 
-type PricingModal = 'price-create' | 'price-edit' | 'tax-create' | 'tax-edit' | 'delete' | null;
-
-type Deletion = { kind: 'price'; item: Price } | { kind: 'tax'; item: Tax };
+type PricingModal = 'price-create' | 'price-edit' | 'delete' | null;
 
 @Component({
   selector: 'app-pricing-page',
-  imports: [PageHeader, Icon, PriceFormModal, TaxFormModal, ConfirmModal],
+  imports: [PageHeader, Icon, PriceFormModal, ConfirmModal],
   templateUrl: './pricing-page.html',
 })
 export class PricingPage {
@@ -31,8 +28,7 @@ export class PricingPage {
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<PricingModal>(null);
   protected readonly selectedPrice = signal<Price | null>(null);
-  protected readonly selectedTax = signal<Tax | null>(null);
-  protected readonly deletion = signal<Deletion | null>(null);
+  protected readonly deletion = signal<Price | null>(null);
 
   protected readonly priceLists = PRICE_LISTS;
   protected readonly formatMoney = formatMoney;
@@ -84,21 +80,15 @@ export class PricingPage {
     this.modal.set(price ? 'price-edit' : 'price-create');
   }
 
-  protected editTax(tax: Tax | null): void {
-    this.selectedTax.set(tax);
-    this.modal.set(tax ? 'tax-edit' : 'tax-create');
-  }
-
-  protected askDelete(deletion: Deletion): void {
-    this.deletion.set(deletion);
+  protected askDelete(price: Price): void {
+    this.deletion.set(price);
     this.modal.set('delete');
   }
 
   protected deleteMessage(): string {
-    const deletion = this.deletion();
-    if (!deletion) return '¿Deseas eliminar este registro?';
-    if (deletion.kind === 'tax') return `¿Deseas eliminar la tarifa ${deletion.item.name}?`;
-    return `¿Deseas eliminar el precio ${deletion.item.price_list} de ${this.productName(deletion.item)}?`;
+    const price = this.deletion();
+    if (!price) return '¿Deseas eliminar este registro?';
+    return `¿Deseas eliminar el precio ${price.price_list} de ${this.productName(price)}?`;
   }
 
   protected onSearch(event: Event): void {
@@ -113,7 +103,6 @@ export class PricingPage {
   protected close(): void {
     this.modal.set(null);
     this.selectedPrice.set(null);
-    this.selectedTax.set(null);
     this.deletion.set(null);
   }
 
@@ -122,28 +111,17 @@ export class PricingPage {
     this.loadPrices();
   }
 
-  /** Cambiar una tarifa puede cambiar la tarifa por defecto o el precio con IVA: se recarga todo. */
-  protected savedTax(): void {
-    this.close();
-    this.loadTaxes();
-    this.loadPrices();
-  }
-
   protected remove(): void {
-    const deletion = this.deletion();
-    if (!deletion) return;
-    const request = deletion.kind === 'tax' ? this.api.deleteTax(deletion.item.id) : this.api.deletePrice(deletion.item.id);
-    const fallback = deletion.kind === 'tax' ? 'No se pudo eliminar la tarifa de IVA' : 'No se pudo eliminar el precio';
-    request.subscribe({
+    const price = this.deletion();
+    if (!price) return;
+    this.api.deletePrice(price.id).subscribe({
       next: () => {
-        const kind = deletion.kind;
         this.close();
-        if (kind === 'tax') this.loadTaxes();
-        else this.loadPrices();
+        this.loadPrices();
       },
       error: (err: unknown) => {
         this.close();
-        this.error.set(httpErrorMessage(err, fallback));
+        this.error.set(httpErrorMessage(err, 'No se pudo eliminar el precio'));
       },
     });
   }

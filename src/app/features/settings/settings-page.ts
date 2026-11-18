@@ -1,7 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '@core/auth/auth.service';
+import { AuthService, httpErrorMessage } from '@core/auth/auth.service';
+import { CompanyService } from '@core/company/company.service';
+import { CatalogApi } from '@features/products/catalog.api';
+import type { Tax } from '@features/products/catalog.model';
 import { Icon, IconName } from '@shared/ui/icon/icon';
 
 const SETTINGS_KEY = 'inventario.settings';
@@ -129,6 +132,8 @@ function readTicket(): TicketTemplate {
 })
 export class SettingsPage {
   private readonly auth = inject(AuthService);
+  private readonly catalog = inject(CatalogApi);
+  private readonly companyApi = inject(CompanyService);
   private readonly current = readSettings();
 
   protected readonly user = this.auth.user;
@@ -147,6 +152,43 @@ export class SettingsPage {
   protected readonly showPreview = signal(false);
   protected readonly saved = signal<string | null>(null);
   protected readonly testMessage = signal<string | null>(null);
+
+  protected readonly taxes = signal<Tax[]>([]);
+  protected readonly defaultTaxId = signal<number | null>(this.auth.company()?.default_tax_id ?? null);
+  protected readonly savingTax = signal(false);
+  protected readonly taxMessage = signal<string | null>(null);
+  protected readonly taxError = signal<string | null>(null);
+
+  protected taxLabel(tax: Tax): string {
+    return `${tax.name} (${tax.is_exempt ? 'exento' : `${Number(tax.rate)}%`})`;
+  }
+
+  protected onDefaultTax(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.defaultTaxId.set(value ? Number(value) : null);
+    this.taxMessage.set(null);
+    this.taxError.set(null);
+  }
+
+  protected saveDefaultTax(): void {
+    const taxId = this.defaultTaxId();
+    if (taxId === null || this.savingTax()) return;
+    this.savingTax.set(true);
+    this.taxMessage.set(null);
+    this.taxError.set(null);
+    this.companyApi.setDefaultTax(taxId).subscribe({
+      next: (company) => {
+        this.savingTax.set(false);
+        this.auth.setCompany(company);
+        this.defaultTaxId.set(company.default_tax_id);
+        this.taxMessage.set('IVA por defecto actualizado.');
+      },
+      error: (err: unknown) => {
+        this.savingTax.set(false);
+        this.taxError.set(httpErrorMessage(err, 'No se pudo cambiar el IVA por defecto'));
+      },
+    });
+  }
 
   protected readonly connectedCount = computed(
     () => this.rows.filter((row) => this.devices()[row.id].connected).length,
@@ -197,6 +239,13 @@ export class SettingsPage {
   constructor() {
     // Datos al día de la empresa para la vista previa del ticket.
     this.auth.refreshPlan().subscribe();
+    // El IVA es global y solo se lee; lo único que elige la empresa es cuál es el suyo por defecto.
+    if (this.auth.isCompanyAdmin()) {
+      this.catalog.taxes().subscribe({
+        next: (taxes) => this.taxes.set(taxes),
+        error: (err: unknown) => this.taxError.set(httpErrorMessage(err, 'No se pudieron cargar las tarifas de IVA')),
+      });
+    }
   }
 
   protected device(id: DeviceId): DeviceState {

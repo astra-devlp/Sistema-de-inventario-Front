@@ -1,0 +1,71 @@
+<app-modal [open]="open()" title="Nueva empresa" size="lg" (closed)="dismiss()">
+  <form class="form-grid" autocomplete="off" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full" role="alert">{{ error() }}</p>
+    }
+
+    <h3 class="form-section-title field--full">Empresa</h3>
+    <div class="field field--full">
+      <label class="label" for="cc-name">Nombre comercial <span class="required">*</span></label>
+      <input id="cc-name" class="input" type="text" maxlength="200" formControlName="name" />
+    </div>
+    <div class="field">
+      <label class="label" for="cc-legal">Razón social</label>
+      <input id="cc-legal" class="input" type="text" maxlength="200" formControlName="legal_name" />
+    </div>
+    <div class="field">
+      <label class="label" for="cc-nit">NIT</label>
+      <input id="cc-nit" class="input" type="text" maxlength="30" placeholder="900.123.456-7" formControlName="tax_id" />
+    </div>
+    <div class="field">
+      <label class="label" for="cc-phone">Teléfono</label>
+      <input id="cc-phone" class="input" type="text" maxlength="50" formControlName="phone" />
+    </div>
+    <div class="field">
+      <label class="label" for="cc-city">Ciudad</label>
+      <input id="cc-city" class="input" type="text" maxlength="100" formControlName="city" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="cc-address">Dirección</label>
+      <input id="cc-address" class="input" type="text" maxlength="250" formControlName="address" />
+    </div>
+
+    <h3 class="form-section-title field--full">Plan</h3>
+    <div class="field">
+      <label class="label" for="cc-plan">Plan <span class="required">*</span></label>
+      <select id="cc-plan" class="select" formControlName="plan">
+        @for (plan of plans; track plan.value) {
+          <option [value]="plan.value">{{ plan.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="cc-expires">Vencimiento <span class="required">*</span></label>
+      <input id="cc-expires" class="input" type="date" formControlName="expires_on" />
+    </div>
+    <p class="hint field--full">{{ planNote }}</p>
+
+    <h3 class="form-section-title field--full">Primer Administrador</h3>
+    <div class="field">
+      <label class="label" for="cc-admin-name">Nombre <span class="required">*</span></label>
+      <input id="cc-admin-name" class="input" type="text" maxlength="150" formControlName="admin_name" />
+    </div>
+    <div class="field">
+      <label class="label" for="cc-admin-email">Correo <span class="required">*</span></label>
+      <input id="cc-admin-email" class="input" type="email" maxlength="254" autocomplete="off" formControlName="admin_email" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="cc-admin-password">Contraseña inicial <span class="required">*</span></label>
+      <input #password id="cc-admin-password" class="input" type="password" name="initial-password" minlength="8"
+        maxlength="128" autocomplete="new-password" (keydown.enter)="submit()" />
+      <p class="hint">De 8 a 128 caracteres. No se guarda en el navegador: dísela al Administrador por un canal seguro.</p>
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="dismiss()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Creando…' : 'Crear empresa' }}
+    </button>
+  </div>
+</app-modal>

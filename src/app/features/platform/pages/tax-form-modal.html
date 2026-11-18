@@ -10,12 +10,12 @@
     <div class="field">
       <label class="label" for="tx-rate">Porcentaje <span class="required">*</span></label>
       <div class="input-group">
-        <input id="tx-rate" class="input" type="number" min="0" max="100" step="any" placeholder="19" formControlName="rate" />
+        <input id="tx-rate" class="input" type="text" inputmode="decimal" placeholder="19" formControlName="rate" />
         <span class="input-group__addon">%</span>
       </div>
     </div>
     <label class="check"><input type="checkbox" formControlName="is_exempt" /> Exento de IVA</label>
-    <label class="check"><input type="checkbox" formControlName="is_default" /> Usar por defecto en productos nuevos</label>
+    <p class="hint">Una tarifa que ya usan productos no puede cambiar su porcentaje ni su exención.</p>
   </form>
 
   <div modal-footer>

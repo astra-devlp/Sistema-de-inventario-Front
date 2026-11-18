@@ -16,9 +16,7 @@ import {
   PricePayload,
   ProductOption,
   Tax,
-  TaxPayload,
   Unit,
-  UnitPayload,
 } from './catalog.model';
 
 /** CRUD de los catálogos del producto. Cada pantalla de Productos usa la parte que le toca. */
@@ -59,22 +57,10 @@ export class CatalogApi {
     return this.http.delete<void>(`${API_URL}/categories/${id}`).pipe(this.bustProductCatalogCache());
   }
 
-  // Unidades y presentaciones
+  // Unidades (solo lectura: las escribe plataforma) y presentaciones
 
   units(): Observable<Unit[]> {
     return this.http.get<Unit[]>(`${API_URL}/units`);
-  }
-
-  createUnit(payload: UnitPayload): Observable<Unit> {
-    return this.http.post<Unit>(`${API_URL}/units`, payload).pipe(this.bustProductCatalogCache());
-  }
-
-  updateUnit(id: number, payload: UnitPayload): Observable<Unit> {
-    return this.http.patch<Unit>(`${API_URL}/units/${id}`, payload).pipe(this.bustProductCatalogCache());
-  }
-
-  deleteUnit(id: number): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/units/${id}`).pipe(this.bustProductCatalogCache());
   }
 
   presentations(): Observable<Presentation[]> {
@@ -95,22 +81,10 @@ export class CatalogApi {
     return this.http.delete<void>(`${API_URL}/presentations/${id}`).pipe(this.bustProductCatalogCache());
   }
 
-  // IVA
+  // IVA (solo lectura: lo escribe plataforma; el por defecto va en `PUT /companies/me/default-tax`)
 
   taxes(): Observable<Tax[]> {
     return this.http.get<Tax[]>(`${API_URL}/taxes`);
-  }
-
-  createTax(payload: TaxPayload): Observable<Tax> {
-    return this.http.post<Tax>(`${API_URL}/taxes`, payload).pipe(this.bustProductCatalogCache());
-  }
-
-  updateTax(id: number, payload: TaxPayload): Observable<Tax> {
-    return this.http.patch<Tax>(`${API_URL}/taxes/${id}`, payload).pipe(this.bustProductCatalogCache());
-  }
-
-  deleteTax(id: number): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/taxes/${id}`).pipe(this.bustProductCatalogCache());
   }
 
   // Códigos de barras

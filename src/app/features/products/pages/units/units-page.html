@@ -1,7 +1,6 @@
-<app-page-header title="Unidades y presentaciones" subtitle="Define unidades de medida y empaques (ej: Caja x100).">
+<app-page-header title="Unidades y presentaciones" subtitle="Consulta las unidades de medida y define empaques (ej: Caja x100).">
   <div actions>
-    <button type="button" class="btn btn--outline" (click)="editUnit(null)"><app-icon name="plus" /> Nueva unidad</button>
-    <button type="button" class="btn btn--primary" [disabled]="!units().length" [title]="units().length ? '' : 'Primero crea una unidad de medida'" (click)="editPresentation(null)">
+    <button type="button" class="btn btn--primary" [disabled]="!units().length" [title]="units().length ? '' : 'No hay unidades de medida: las define la plataforma'" (click)="editPresentation(null)">
       <app-icon name="plus" /> Nueva presentación
     </button>
   </div>
@@ -15,6 +14,7 @@
   <section class="card">
     <div class="card__header">
       <h2 class="card__title">Unidades de medida</h2>
+      <p class="hint">Solo lectura: las unidades las define la plataforma y son las mismas para todas las empresas.</p>
     </div>
     <div class="table-wrap">
       <table class="table">
@@ -23,7 +23,6 @@
             <th>Nombre</th>
             <th>Abrev.</th>
             <th>Tipo</th>
-            <th class="col-actions">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -32,14 +31,10 @@
               <td>{{ unit.name }}</td>
               <td class="text-mono text-muted">{{ unit.abbreviation }}</td>
               <td><span class="badge">{{ unit.unit_type }}</span></td>
-              <td class="col-actions">
-                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="editUnit(unit)"><app-icon name="edit" /></button>
-                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete({ kind: 'unit', item: unit })"><app-icon name="trash" /></button>
-              </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="4">
+              <td colspan="3">
                 <div class="empty-state">
                   <p class="empty-state__title">{{ loading() ? 'Cargando unidades…' : 'No hay unidades' }}</p>
                 </div>
@@ -75,7 +70,7 @@
               <td class="text-muted">{{ unitName(presentation) }}</td>
               <td class="col-actions">
                 <button type="button" class="btn btn--icon" aria-label="Editar" (click)="editPresentation(presentation)"><app-icon name="edit" /></button>
-                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete({ kind: 'presentation', item: presentation })"><app-icon name="trash" /></button>
+                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete(presentation)"><app-icon name="trash" /></button>
               </td>
             </tr>
           } @empty {
@@ -93,12 +88,6 @@
   </section>
 </div>
 
-<app-unit-form-modal
-  [open]="modal() === 'unit-create' || modal() === 'unit-edit'"
-  [unit]="modal() === 'unit-edit' ? selectedUnit() : null"
-  (closed)="close()"
-  (saved)="saved()"
-/>
 <app-presentation-form-modal
   [open]="modal() === 'pres-create' || modal() === 'pres-edit'"
   [presentation]="modal() === 'pres-edit' ? selectedPresentation() : null"

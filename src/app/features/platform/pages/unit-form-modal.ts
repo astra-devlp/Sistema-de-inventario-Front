@@ -1,9 +1,9 @@
 import { Component, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { httpErrorMessage } from '@core/auth/auth.service';
+import { UNIT_TYPES, Unit, UnitType } from '@features/products/catalog.model';
 import { Modal } from '@shared/ui/modal/modal';
-import { CatalogApi } from '../../../catalog.api';
-import { UNIT_TYPES, Unit, UnitType } from '../../../catalog.model';
+import { platformErrorMessage, unitBody } from '../platform-rules';
+import { PlatformApi } from '../platform.api';
 
 @Component({
   selector: 'app-unit-form-modal',
@@ -11,7 +11,7 @@ import { UNIT_TYPES, Unit, UnitType } from '../../../catalog.model';
   templateUrl: './unit-form-modal.html',
 })
 export class UnitFormModal {
-  private readonly api = inject(CatalogApi);
+  private readonly api = inject(PlatformApi);
 
   readonly open = input(false);
   readonly unit = input<Unit | null>(null);
@@ -45,14 +45,12 @@ export class UnitFormModal {
 
   protected submit(): void {
     const raw = this.form.getRawValue();
-    if (!raw.name.trim()) return this.error.set('El nombre es obligatorio');
-    if (!raw.abbreviation.trim()) return this.error.set('La abreviatura es obligatoria');
-
-    const payload = { name: raw.name.trim(), abbreviation: raw.abbreviation.trim(), unit_type: raw.unit_type };
+    const result = unitBody(raw.name, raw.abbreviation, raw.unit_type);
+    if (!result.ok) return this.error.set(result.error);
     this.submitting.set(true);
     this.error.set(null);
     const editing = this.unit();
-    const request = editing ? this.api.updateUnit(editing.id, payload) : this.api.createUnit(payload);
+    const request = editing ? this.api.updateUnit(editing.id, result.value) : this.api.createUnit(result.value);
     request.subscribe({
       next: () => {
         this.submitting.set(false);
@@ -60,7 +58,7 @@ export class UnitFormModal {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(httpErrorMessage(err, 'No se pudo guardar la unidad'));
+        this.error.set(platformErrorMessage(err, 'No se pudo guardar la unidad'));
       },
     });
   }

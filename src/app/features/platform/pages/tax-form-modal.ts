@@ -1,18 +1,19 @@
 import { Component, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { httpErrorMessage } from '@core/auth/auth.service';
+import { Tax } from '@features/products/catalog.model';
 import { Modal } from '@shared/ui/modal/modal';
-import { CatalogApi } from '../../../catalog.api';
-import { Tax, TaxPayload } from '../../../catalog.model';
+import { platformErrorMessage, taxBody } from '../platform-rules';
+import { PlatformApi } from '../platform.api';
 
+/** Tarifa de IVA global. No hay «por defecto» aquí: cada empresa lo elige en Configuración. */
 @Component({
   selector: 'app-tax-form-modal',
   imports: [Modal, ReactiveFormsModule],
   templateUrl: './tax-form-modal.html',
 })
 export class TaxFormModal {
-  private readonly api = inject(CatalogApi);
+  private readonly api = inject(PlatformApi);
 
   readonly open = input(false);
   readonly tax = input<Tax | null>(null);
@@ -24,9 +25,8 @@ export class TaxFormModal {
 
   protected readonly form = new FormGroup({
     name: new FormControl('', { nonNullable: true }),
-    rate: new FormControl<number | null>(null),
+    rate: new FormControl('', { nonNullable: true }),
     is_exempt: new FormControl(false, { nonNullable: true }),
-    is_default: new FormControl(false, { nonNullable: true }),
   });
 
   constructor() {
@@ -35,12 +35,7 @@ export class TaxFormModal {
       const tax = this.tax();
       untracked(() => {
         this.error.set(null);
-        this.form.reset({
-          name: tax?.name ?? '',
-          rate: tax ? Number(tax.rate) : null,
-          is_exempt: tax?.is_exempt ?? false,
-          is_default: tax?.is_default ?? false,
-        });
+        this.form.reset({ name: tax?.name ?? '', rate: tax ? String(Number(tax.rate)) : '', is_exempt: tax?.is_exempt ?? false });
         this.syncRate(this.form.controls.is_exempt.value);
       });
     });
@@ -49,17 +44,12 @@ export class TaxFormModal {
 
   protected submit(): void {
     const raw = this.form.getRawValue();
-    if (!raw.name.trim()) return this.error.set('El nombre es obligatorio');
-    const rate = raw.is_exempt ? 0 : Number(raw.rate);
-    if (!raw.is_exempt && (raw.rate === null || Number.isNaN(rate) || rate < 0 || rate > 100)) {
-      return this.error.set('El porcentaje debe estar entre 0 y 100');
-    }
-
-    const payload: TaxPayload = { name: raw.name.trim(), rate, is_exempt: raw.is_exempt, is_default: raw.is_default };
+    const result = taxBody(raw.name, raw.rate, raw.is_exempt);
+    if (!result.ok) return this.error.set(result.error);
     this.submitting.set(true);
     this.error.set(null);
     const editing = this.tax();
-    const request = editing ? this.api.updateTax(editing.id, payload) : this.api.createTax(payload);
+    const request = editing ? this.api.updateTax(editing.id, result.value) : this.api.createTax(result.value);
     request.subscribe({
       next: () => {
         this.submitting.set(false);
@@ -67,7 +57,7 @@ export class TaxFormModal {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(httpErrorMessage(err, 'No se pudo guardar la tarifa de IVA'));
+        this.error.set(platformErrorMessage(err, 'No se pudo guardar la tarifa de IVA'));
       },
     });
   }
@@ -76,7 +66,7 @@ export class TaxFormModal {
   private syncRate(exempt: boolean): void {
     const rate = this.form.controls.rate;
     if (exempt) {
-      rate.setValue(0, { emitEvent: false });
+      rate.setValue('0', { emitEvent: false });
       rate.disable({ emitEvent: false });
     } else {
       rate.enable({ emitEvent: false });

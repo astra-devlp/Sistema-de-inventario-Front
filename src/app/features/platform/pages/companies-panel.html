@@ -1,0 +1,76 @@
+<section class="card">
+  <div class="toolbar">
+    <h2 class="acc-panel__title">Empresas</h2>
+    <button type="button" class="btn btn--primary" (click)="openCreate()"><app-icon name="plus" /> Nueva empresa</button>
+  </div>
+
+  @if (notice()) {
+    <p class="acc-toast" role="status" style="margin: 16px">{{ notice() }}</p>
+  }
+  @if (error()) {
+    <p class="auth-error" role="alert" style="margin: 16px">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>NIT</th>
+          <th>Plan</th>
+          <th>Vencimiento</th>
+          <th>Estado del plan</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (company of companies(); track company.id) {
+          <tr>
+            <td>
+              {{ company.name }}
+              @if (company.legal_name && company.legal_name !== company.name) {
+                <span class="text-muted"> · {{ company.legal_name }}</span>
+              }
+            </td>
+            <td class="text-mono text-muted">{{ company.tax_id ?? '—' }}</td>
+            <td>{{ company.plan ? planLabels[company.plan] : '—' }}</td>
+            <td>{{ expiry(company) }}</td>
+            <td>
+              <span class="badge" [class]="'badge ' + badge(state(company))">{{ stateLabels[state(company)] }}</span>
+            </td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--outline" (click)="openPlan(company)">Renovar</button>
+              <button type="button" class="btn btn--icon" aria-label="Editar datos" (click)="openEdit(company)"><app-icon name="edit" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando empresas…' : 'No hay empresas' }}</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-company-create-modal
+  [open]="modal() === 'create'"
+  (closed)="close()"
+  (saved)="saved('Empresa «' + $event.name + '» creada con su primer Administrador.')"
+/>
+<app-company-edit-modal
+  [open]="modal() === 'edit'"
+  [company]="selected()"
+  (closed)="close()"
+  (saved)="saved('Datos de «' + $event.name + '» guardados.')"
+/>
+<app-plan-modal
+  [open]="modal() === 'plan'"
+  [company]="selected()"
+  (closed)="close()"
+  (saved)="saved('Plan de «' + $event.name + '» actualizado.')"
+/>

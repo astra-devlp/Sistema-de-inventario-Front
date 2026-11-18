@@ -15,6 +15,11 @@ export class CompanyService {
     return this.http.get<Company>(`${API_URL}/companies/me`, { context });
   }
 
+  /** Solo el Administrador: el IVA es global y cada empresa elige cuál es el suyo por defecto. */
+  setDefaultTax(taxId: number): Observable<Company> {
+    return this.http.put<Company>(`${API_URL}/companies/me/default-tax`, { tax_id: taxId });
+  }
+
   /** Solo el Administrador. NIT y razón social no se envían: los cambia plataforma (422). */
   update(payload: CompanyUpdatePayload): Observable<Company> {
     return this.http.patch<Company>(`${API_URL}/companies/me`, payload);
