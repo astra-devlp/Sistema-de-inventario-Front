@@ -6,6 +6,7 @@ import { PageHeader } from '@shared/ui/page-header/page-header';
 import { InventoryApi } from '../../inventory.api';
 import {
   MOVEMENT_BADGE,
+  MOVEMENT_ICON,
   MOVEMENT_TYPES,
   Movement,
   MovementType,
@@ -37,6 +38,7 @@ export class MovementsPage {
 
   protected readonly types = MOVEMENT_TYPES;
   protected readonly badge = MOVEMENT_BADGE;
+  protected readonly icons = MOVEMENT_ICON;
   protected readonly formatMoney = formatMoney;
   protected readonly formatQuantity = formatQuantity;
   protected readonly formatSignedQuantity = formatSignedQuantity;

@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
-import { AuthUser, LoginResponse } from './auth.model';
+import { AuthUser, LoginResponse, PLATFORM_ADMIN_ROLES, homePathForRole } from './auth.model';
 
 const TOKEN_KEY = 'inventario.token';
 const USER_KEY = 'inventario.user';
@@ -39,8 +39,24 @@ export class AuthService {
     return true;
   }
 
+  /** Administradores de la plataforma: ven el panel Administración → Cuentas. */
   isAdmin(): boolean {
-    return this.current()?.role === 'Administrador';
+    const role = this.current()?.role;
+    return role != null && PLATFORM_ADMIN_ROLES.includes(role);
+  }
+
+  /** Dueño de la cuenta del cliente: gestiona el personal en Usuarios. */
+  isClient(): boolean {
+    return this.current()?.role === 'Cliente';
+  }
+
+  canManageStaff(): boolean {
+    return this.isAdmin() || this.isClient();
+  }
+
+  /** Inicio del panel: Usuario → caja; Admin/Cliente → asesoría contable. */
+  homePath(): string {
+    return homePathForRole(this.current()?.role);
   }
 
   login(email: string, password: string): Observable<LoginResponse> {
@@ -53,6 +69,12 @@ export class AuthService {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.current.set(null);
+  }
+
+  /** Actualiza el usuario guardado en sesión (por ejemplo tras editar la cuenta). */
+  setUser(user: AuthUser): void {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    this.current.set(user);
   }
 
   private persist(response: LoginResponse): void {

@@ -1,25 +1,42 @@
-<app-page-header title="Productos" subtitle="Gestiona el catálogo de productos, SKU, presentaciones y precios.">
+<app-page-header
+  title="Productos"
+  subtitle="Catálogo con SKU, presentaciones y precios listos para vender e inventariar."
+>
   <div actions>
-    <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Nuevo producto</button>
+    <button type="button" class="btn btn--primary" (click)="open('create')">
+      <app-icon name="plus" /> Nuevo producto
+    </button>
   </div>
 </app-page-header>
 
 <section class="grid grid--4 mb-4">
   <div class="card stat">
-    <span class="stat__icon"><app-icon name="box" [size]="22" /></span>
-    <div><p class="stat__label">Total productos</p><p class="stat__value">{{ stats()?.total ?? 0 }}</p></div>
+    <span class="stat__icon"><app-icon name="box" [size]="20" /></span>
+    <div>
+      <p class="stat__label">Total productos</p>
+      <p class="stat__value">{{ stats()?.total ?? 0 }}</p>
+    </div>
   </div>
   <div class="card stat">
-    <span class="stat__icon stat__icon--success"><app-icon name="check" [size]="22" /></span>
-    <div><p class="stat__label">Activos</p><p class="stat__value">{{ stats()?.active ?? 0 }}</p></div>
+    <span class="stat__icon stat__icon--success"><app-icon name="check" [size]="20" /></span>
+    <div>
+      <p class="stat__label">Activos</p>
+      <p class="stat__value">{{ stats()?.active ?? 0 }}</p>
+    </div>
   </div>
   <div class="card stat">
-    <span class="stat__icon stat__icon--info"><app-icon name="tag" [size]="22" /></span>
-    <div><p class="stat__label">Categorías</p><p class="stat__value">{{ stats()?.categories ?? 0 }}</p></div>
+    <span class="stat__icon stat__icon--info"><app-icon name="tag" [size]="20" /></span>
+    <div>
+      <p class="stat__label">Categorías</p>
+      <p class="stat__value">{{ stats()?.categories ?? 0 }}</p>
+    </div>
   </div>
   <div class="card stat">
-    <span class="stat__icon stat__icon--warning"><app-icon name="alert" [size]="22" /></span>
-    <div><p class="stat__label">Inactivos</p><p class="stat__value">{{ stats()?.inactive ?? 0 }}</p></div>
+    <span class="stat__icon stat__icon--warning"><app-icon name="alert" [size]="20" /></span>
+    <div>
+      <p class="stat__label">Inactivos</p>
+      <p class="stat__value">{{ stats()?.inactive ?? 0 }}</p>
+    </div>
   </div>
 </section>
 
@@ -56,10 +73,8 @@
     <table class="table">
       <thead>
         <tr>
-          <th>SKU</th>
           <th>Producto</th>
           <th>Categoría</th>
-          <th>Código de barras</th>
           <th>Presentación</th>
           <th class="col-num">Precio</th>
           <th>IVA</th>
@@ -70,27 +85,61 @@
       <tbody>
         @for (product of products(); track product.id) {
           <tr>
-            <td class="text-mono text-muted">{{ product.sku }}</td>
-            <td>{{ product.name }}</td>
+            <td>
+              <span class="table__primary">{{ product.name }}</span>
+              <span class="table__secondary">{{ product.sku }} · {{ product.barcode || 'Sin código' }}</span>
+            </td>
             <td class="text-muted">{{ categoryName(product) }}</td>
-            <td class="text-mono text-muted">{{ product.barcode || '—' }}</td>
             <td class="text-muted">{{ presentationName(product) }}</td>
-            <td class="col-num">{{ formatMoney(product.sale_price) }}</td>
+            <td class="col-num table__primary">{{ formatMoney(product.sale_price) }}</td>
             <td class="text-muted">{{ taxLabel(product) }}</td>
             <td>
-              <span class="badge" [class.badge--success]="product.is_active">{{ product.is_active ? 'Activo' : 'Inactivo' }}</span>
+              <span
+                class="badge"
+                [class.badge--success]="product.is_active"
+                [class.badge--danger]="!product.is_active"
+              >
+                {{ product.is_active ? 'Activo' : 'Inactivo' }}
+              </span>
             </td>
             <td class="col-actions">
-              <button type="button" class="btn btn--icon" aria-label="Ver detalle" (click)="open('detail', product)"><app-icon name="eye" /></button>
-              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', product)"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', product)"><app-icon name="trash" /></button>
+              <button
+                type="button"
+                class="btn btn--icon"
+                aria-label="Ver detalle"
+                (click)="open('detail', product)"
+              >
+                <app-icon name="eye" />
+              </button>
+              <button
+                type="button"
+                class="btn btn--icon"
+                aria-label="Editar"
+                (click)="open('edit', product)"
+              >
+                <app-icon name="edit" />
+              </button>
+              <button
+                type="button"
+                class="btn btn--icon btn--danger-hover"
+                aria-label="Eliminar"
+                (click)="open('delete', product)"
+              >
+                <app-icon name="trash" />
+              </button>
             </td>
           </tr>
         } @empty {
           <tr>
-            <td colspan="9">
+            <td colspan="7">
               <div class="empty-state">
-                <p class="empty-state__title">{{ loading() ? 'Cargando productos…' : 'No hay productos' }}</p>
+                <span class="empty-state__icon"><app-icon name="box" [size]="24" /></span>
+                <p class="empty-state__title">
+                  {{ loading() ? 'Cargando productos…' : 'Aún no hay productos' }}
+                </p>
+                @if (!loading()) {
+                  <p class="text-muted">Crea el primero para armar tu catálogo.</p>
+                }
               </div>
             </td>
           </tr>

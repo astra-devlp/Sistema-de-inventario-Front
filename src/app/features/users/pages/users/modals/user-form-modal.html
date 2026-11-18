@@ -1,4 +1,4 @@
-<app-modal [open]="open()" [title]="user() ? 'Editar usuario' : 'Nuevo usuario'" (closed)="closed.emit()">
+<app-modal [open]="open()" [title]="title" (closed)="closed.emit()">
   <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
     @if (error()) {
       <p class="auth-error field--full">{{ error() }}</p>
@@ -15,33 +15,68 @@
       <label class="label" for="uf-phone">Teléfono</label>
       <input id="uf-phone" class="input" type="tel" formControlName="phone" />
     </div>
-    <div class="field">
-      <label class="label" for="uf-role">Rol</label>
-      <select id="uf-role" class="select" formControlName="role">
-        @for (role of roles; track role) {
-          <option [value]="role">{{ role }}</option>
-        }
-      </select>
-    </div>
-    <div class="field">
+    @if (mode() === 'accounts') {
+      <div class="field">
+        <label class="label" for="uf-role">Tipo de cuenta</label>
+        <select id="uf-role" class="select" formControlName="role" (change)="onRoleChange()">
+          @for (role of roles; track role) {
+            <option [value]="role">{{ role }}</option>
+          }
+        </select>
+      </div>
+    }
+    @if (isClientRole) {
+      <div class="field">
+        <label class="label" for="uf-plan">Plan <span class="required">*</span></label>
+        <select id="uf-plan" class="select" formControlName="plan" (change)="onPlanChange()">
+          @for (plan of plans; track plan) {
+            <option [value]="plan">{{ plan }}</option>
+          }
+        </select>
+      </div>
+      @if (form.controls.plan.value !== 'Prueba') {
+        <div class="field">
+          <label class="label" for="uf-plan-start">Fecha inicio <span class="required">*</span></label>
+          <input id="uf-plan-start" class="input" type="date" formControlName="plan_starts_at" />
+        </div>
+      }
+    }
+    <div class="field" [class.field--full]="mode() === 'staff'">
       <label class="label" for="uf-password">
         Contraseña
-        @if (!user()) { <span class="required">*</span> }
+        @if (!user()) {
+          <span class="required">*</span>
+        }
       </label>
-      <input id="uf-password" class="input" type="password" formControlName="password" autocomplete="new-password" />
+      <input
+        id="uf-password"
+        class="input"
+        type="password"
+        formControlName="password"
+        autocomplete="new-password"
+      />
       @if (user()) {
         <span class="hint">Déjala vacía si no quieres cambiarla.</span>
       }
     </div>
     @if (user()) {
-      <label class="check field--full"><input type="checkbox" formControlName="is_active" /> Usuario activo</label>
+      <label class="check field--full">
+        <input type="checkbox" formControlName="is_active" />
+        Cuenta activa
+      </label>
     }
   </form>
 
-  <div modal-footer>
+  <div modal-footer class="modal-footer-actions">
+    @if (user()) {
+      <button type="button" class="btn btn--danger" [disabled]="submitting()" (click)="deleteRequested.emit()">
+        Eliminar
+      </button>
+    }
+    <span class="modal-footer-actions__spacer"></span>
     <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
     <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
-      {{ submitting() ? 'Guardando…' : 'Guardar usuario' }}
+      {{ submitting() ? 'Guardando…' : user() ? 'Editar' : 'Guardar' }}
     </button>
   </div>
 </app-modal>

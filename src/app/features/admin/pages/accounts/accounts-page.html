@@ -1,0 +1,111 @@
+<app-page-header
+  title="Cuentas"
+  subtitle="Administradores y cuentas de cliente (con plan)."
+>
+  <div actions>
+    <button type="button" class="btn btn--primary" (click)="open('create')">
+      <app-icon name="plus" /> Nueva cuenta
+    </button>
+  </div>
+</app-page-header>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <app-icon name="search" />
+      <input
+        class="input"
+        type="search"
+        placeholder="Buscar por nombre"
+        [value]="query()"
+        (input)="onSearch($event)"
+      />
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Tipo de cuenta</th>
+          <th>Plan</th>
+          <th>Inicio</th>
+          <th>Vence</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (account of accounts(); track account.id) {
+          <tr>
+            <td>{{ account.name }}</td>
+            <td>{{ account.email }}</td>
+            <td><span class="badge badge--primary">{{ account.role }}</span></td>
+            <td class="text-muted">
+              {{ account.role === 'Cliente' ? account.plan || '—' : '—' }}
+            </td>
+            <td class="text-muted">
+              {{ account.role === 'Cliente' ? formatDate(account.plan_starts_at) : '—' }}
+            </td>
+            <td class="text-muted">
+              {{ account.role === 'Cliente' ? formatDate(account.plan_ends_at) : '—' }}
+            </td>
+            <td>
+              <span
+                class="badge"
+                [class.badge--success]="account.is_active"
+                [class.badge--danger]="!account.is_active"
+              >
+                {{ account.is_active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="col-actions">
+              <button
+                type="button"
+                class="btn btn--icon"
+                aria-label="Editar"
+                (click)="open('edit', account)"
+              >
+                <app-icon name="edit" />
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <p class="empty-state__title">
+                  {{ loading() ? 'Cargando cuentas…' : 'No hay cuentas' }}
+                </p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-user-form-modal
+  [open]="modal() === 'create' || modal() === 'edit'"
+  [user]="modal() === 'edit' ? selected() : null"
+  mode="accounts"
+  (closed)="close()"
+  (saved)="saved()"
+  (deleteRequested)="open('delete', selected())"
+/>
+<app-secure-delete-modal
+  [open]="modal() === 'delete'"
+  [email]="selected()?.email || ''"
+  title="Eliminar cuenta"
+  message="¿Deseas eliminar esta cuenta?"
+  entityLabel="cuenta"
+  (closed)="close()"
+  (confirmed)="remove()"
+/>

@@ -1,0 +1,28 @@
+<app-page-header
+  title="Configuración"
+  subtitle="Preferencias generales de la aplicación."
+/>
+
+<section class="card" style="max-width: 560px">
+  <div class="form-grid">
+    @if (saved()) {
+      <p class="badge badge--success field--full" style="padding: 10px 12px">
+        Configuración guardada en este dispositivo.
+      </p>
+    }
+
+    <div class="field field--full">
+      <label class="label" for="cfg-company">Nombre del negocio</label>
+      <input id="cfg-company" class="input" type="text" [(ngModel)]="companyName" />
+    </div>
+
+    <label class="check field--full">
+      <input type="checkbox" [(ngModel)]="lowStockAlerts" />
+      Mostrar alertas de stock bajo
+    </label>
+
+    <div class="field--full" style="display: flex; justify-content: flex-end">
+      <button type="button" class="btn btn--primary" (click)="save()">Guardar</button>
+    </div>
+  </div>
+</section>

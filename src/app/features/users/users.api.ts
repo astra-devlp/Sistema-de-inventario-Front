@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
-import { AuthUser, UserRole } from '@core/auth/auth.model';
+import { AuthUser, ClientPlan, UserRole } from '@core/auth/auth.model';
 
 export interface UserPayload {
   name: string;
@@ -11,6 +11,8 @@ export interface UserPayload {
   role: UserRole;
   phone: string | null;
   is_active?: boolean;
+  plan?: ClientPlan | null;
+  plan_starts_at?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

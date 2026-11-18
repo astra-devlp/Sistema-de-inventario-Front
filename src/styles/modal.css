@@ -6,7 +6,9 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  background: rgba(17, 24, 39, 0.55);
+  background: var(--modal-scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   animation: fade-in 0.15s ease;
 }
 
@@ -17,13 +19,19 @@
   max-width: 560px;
   max-height: calc(100vh - 32px);
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   animation: pop-in 0.18s ease;
+  color: var(--text);
 }
 
-.modal--sm { max-width: 420px; }
-.modal--lg { max-width: 820px; }
+.modal--sm {
+  max-width: 420px;
+}
+.modal--lg {
+  max-width: 820px;
+}
 
 .modal__header {
   display: flex;
@@ -34,8 +42,16 @@
   border-bottom: 1px solid var(--border);
 }
 
-.modal__title { font-size: 17px; font-weight: 600; }
-.modal__body { padding: var(--space-5); overflow-y: auto; }
+.modal__title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.modal__body {
+  padding: var(--space-5);
+  overflow-y: auto;
+}
 
 .modal__footer {
   display: flex;
@@ -47,7 +63,46 @@
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-.confirm { text-align: center; }
+.modal-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.modal-footer-actions__spacer {
+  flex: 1;
+}
+
+.secure-delete__timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+
+.secure-delete__timer-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.secure-delete__timer-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--danger);
+}
+
+.confirm {
+  text-align: center;
+}
 .confirm__icon {
   display: grid;
   place-items: center;
@@ -59,5 +114,14 @@
   color: var(--danger);
 }
 
-@keyframes fade-in { from { opacity: 0; } }
-@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

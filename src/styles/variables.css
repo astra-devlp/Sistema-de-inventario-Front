@@ -1,45 +1,96 @@
-:root {
-  /* Colores de marca */
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-soft: #eef2ff;
+/* Tema claro — inventario premium (Landing light) */
+html.light {
+  --primary: #2457d6;
+  --primary-hover: #1c47bd;
+  --primary-soft: #e7eefc;
+  --accent: #1d4ed8;
 
-  /* Semánticos */
-  --success: #16a34a;
-  --success-soft: #dcfce7;
-  --warning: #d97706;
+  --success: #047857;
+  --success-soft: #d1fae5;
+  --warning: #b45309;
   --warning-soft: #fef3c7;
-  --danger: #dc2626;
+  --danger: #b91c1c;
   --danger-soft: #fee2e2;
-  --info: #0284c7;
+  --info: #0369a1;
   --info-soft: #e0f2fe;
 
-  /* Neutros */
-  --bg: #f4f5f9;
+  --bg: #e8ecf5;
+  --bg-glow: radial-gradient(1200px 500px at 12% -10%, rgb(36 87 214 / 0.1), transparent 55%),
+    radial-gradient(900px 420px at 90% 0%, rgb(124 58 237 / 0.05), transparent 50%);
   --surface: #ffffff;
-  --surface-alt: #f9fafb;
-  --border: #e5e7eb;
-  --text: #111827;
-  --text-muted: #6b7280;
-  --text-faint: #9ca3af;
+  --surface-alt: #f3f5fa;
+  --border: #cfd6e4;
+  --text: #0b0e1c;
+  --text-muted: #4a5163;
+  --text-faint: #6b7386;
+  --hairline: rgb(11 14 28 / 0.1);
 
-  /* Sidebar */
-  --sidebar-bg: #111827;
-  --sidebar-text: #cbd5e1;
+  /* Sidebar: azul noche, no negro puro (menos choque con el header) */
+  --sidebar-bg: #12151f;
+  --sidebar-elevated: #1a1e2b;
+  --sidebar-text: #b4bbc8;
+  --sidebar-muted: #8b93a8;
   --sidebar-active: #ffffff;
-  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
-  --sidebar-width: 256px;
-  --topbar-height: 60px;
+  --sidebar-active-bg: rgb(36 87 214 / 0.22);
+  --sidebar-accent: #7bd0ff;
+  --sidebar-border: rgb(255 255 255 / 0.07);
 
-  /* Forma */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
-  --shadow-lg: 0 20px 40px rgba(16, 24, 40, 0.2);
+  --topbar-bg: rgb(255 255 255 / 0.78);
+  --modal-scrim: rgb(11 14 28 / 0.4);
+}
 
-  /* Espaciado */
+/* Tema oscuro — Landing dark */
+:root,
+html.dark {
+  --primary: #3b6ef0;
+  --primary-hover: #5b86f5;
+  --primary-soft: rgb(123 208 255 / 0.14);
+  --accent: #7bd0ff;
+
+  --success: #34d399;
+  --success-soft: rgb(52 211 153 / 0.16);
+  --warning: #fbbf24;
+  --warning-soft: rgb(251 191 36 / 0.16);
+  --danger: #f87171;
+  --danger-soft: rgb(248 113 113 / 0.16);
+  --info: #38bdf8;
+  --info-soft: rgb(56 189 248 / 0.16);
+
+  --bg: #090a10;
+  --bg-glow: radial-gradient(1000px 480px at 8% -8%, rgb(36 87 214 / 0.18), transparent 55%),
+    radial-gradient(800px 400px at 100% 0%, rgb(123 208 255 / 0.08), transparent 45%);
+  --surface: #11131b;
+  --surface-alt: #171a24;
+  --border: #2b3040;
+  --text: #e8eaf0;
+  --text-muted: #aab1c2;
+  --text-faint: #8a91a3;
+  --hairline: rgb(255 255 255 / 0.09);
+
+  --sidebar-bg: #0b0c12;
+  --sidebar-elevated: #131622;
+  --sidebar-text: #aab1c2;
+  --sidebar-muted: #8a91a3;
+  --sidebar-active: #ffffff;
+  --sidebar-active-bg: rgb(123 208 255 / 0.12);
+  --sidebar-accent: #7bd0ff;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+
+  --topbar-bg: rgb(17 19 27 / 0.82);
+  --modal-scrim: rgb(0 0 0 / 0.62);
+}
+
+:root {
+  --sidebar-width: 260px;
+  --topbar-height: 72px;
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 1px 2px rgb(11 14 28 / 0.04);
+  --shadow: 0 12px 32px rgb(11 14 28 / 0.08);
+  --shadow-lg: 0 28px 56px rgb(11 14 28 / 0.16);
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -47,6 +98,14 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
-  --transition: 0.15s ease;
+  --font: 'Geist', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Geist', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Consolas, monospace;
+  --transition: 0.2s ease;
+}
+
+html.dark {
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.2);
+  --shadow: 0 14px 36px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 28px 56px rgb(0 0 0 / 0.5);
 }

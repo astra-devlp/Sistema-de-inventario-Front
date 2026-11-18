@@ -1,36 +1,107 @@
-<section class="auth-screen">
-  <div class="auth-layout">
-    <div class="auth-intro">
-      <p class="auth-kicker">Astra Dev</p>
-      <h1 class="auth-title">Inventario</h1>
-      <p class="auth-lede">Entra para ver productos, existencias y movimientos de tu negocio.</p>
+<section class="fixed inset-0 overflow-y-auto bg-background font-body-md text-on-surface antialiased">
+  <button
+    class="absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-surface-variant transition hover:bg-surface-container hover:text-primary md:top-6 md:right-6"
+    type="button"
+    (click)="theme.toggle()"
+    [attr.aria-label]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+  >
+    <span
+      class="material-symbols-outlined transition-colors duration-200"
+      [class.text-yellow-400]="theme.theme() === 'dark'"
+      aria-hidden="true"
+    >
+      {{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}
+    </span>
+  </button>
+
+  <div
+    class="mx-auto flex min-h-full w-full max-w-[1440px] flex-col items-stretch gap-12 px-margin-mobile py-10 md:px-margin-tablet lg:flex-row lg:items-center lg:gap-16 lg:px-margin lg:py-16"
+  >
+    <div class="flex w-full flex-col items-start lg:flex-1">
+      <img
+        src="brand/logo-horizontal.png"
+        alt="Astra Dev"
+        class="brand-invert-light mb-8 h-10 max-w-[220px] sm:h-11 sm:max-w-[240px]"
+      />
+
+      <h1
+        class="mb-6 max-w-[14ch] font-display text-[2.6rem] leading-[1.02] font-semibold tracking-[-0.04em] text-primary sm:text-[3.5rem]"
+      >
+        Inventario
+        <span class="text-on-surface-variant">de tu negocio, en un solo lugar.</span>
+      </h1>
+
+      <p class="section-lede mb-8">Entra para ver productos, existencias y movimientos.</p>
+
+      <ul class="flex flex-col gap-3 text-body-md text-on-surface">
+        @for (point of points; track point.label) {
+          <li class="flex items-center gap-3">
+            <span
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-accent"
+              aria-hidden="true"
+            >
+              <span class="material-symbols-outlined text-[20px]">{{ point.icon }}</span>
+            </span>
+            {{ point.label }}
+          </li>
+        }
+      </ul>
     </div>
 
-    <form class="auth-card" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
-      <h2 class="auth-card__title">Iniciar sesión</h2>
-      <p class="auth-card__hint">Usa el correo y la contraseña de tu cuenta.</p>
-
-      @if (error()) {
-        <p class="auth-error">{{ error() }}</p>
-      }
-
-      <div class="field">
-        <label class="label" for="auth-email">Correo <span class="required">*</span></label>
-        <input id="auth-email" class="input" type="email" formControlName="email" autocomplete="username" />
+    <form
+      class="flex w-full flex-col gap-5 rounded-2xl border border-outline-variant bg-surface-container-low p-6 md:p-8 lg:max-w-[440px]"
+      [formGroup]="form"
+      (submit)="$event.preventDefault(); submit()"
+    >
+      <div>
+        <h2 class="font-display text-[1.5rem] font-semibold tracking-[-0.02em] text-primary">Iniciar sesión</h2>
+        <p class="mt-1 text-body-sm text-on-surface-variant">Usa el correo y la contraseña de tu cuenta.</p>
       </div>
 
-      <div class="field">
-        <label class="label" for="auth-password">Contraseña <span class="required">*</span></label>
+      @if (error()) {
+        <p class="rounded-lg bg-error-container px-3 py-2.5 text-body-sm text-on-error-container">{{ error() }}</p>
+      }
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-body-sm font-medium text-primary" for="auth-email">Correo</label>
         <input
-          id="auth-password"
-          class="input"
-          type="password"
-          formControlName="password"
-          autocomplete="current-password"
+          id="auth-email"
+          class="min-h-12 w-full rounded-lg border border-outline-variant bg-surface-container px-3 text-primary outline-none focus:border-accent"
+          type="email"
+          formControlName="email"
+          autocomplete="username"
         />
       </div>
 
-      <button type="submit" class="auth-submit" [disabled]="submitting()">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-body-sm font-medium text-primary" for="auth-password">Contraseña</label>
+        <div class="relative">
+          <input
+            id="auth-password"
+            class="min-h-12 w-full rounded-lg border border-outline-variant bg-surface-container px-3 pr-12 text-primary outline-none focus:border-accent"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          <button
+            class="absolute top-1/2 right-1.5 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border-0 bg-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-accent"
+            type="button"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-pressed]="showPassword()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">
+              {{ showPassword() ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="btn-brand mt-1 inline-flex min-h-12 items-center justify-center rounded-lg border-0 px-6 font-body-md text-body-md font-semibold"
+        type="submit"
+        [disabled]="submitting()"
+      >
         {{ submitting() ? 'Espera…' : 'Entrar' }}
       </button>
     </form>

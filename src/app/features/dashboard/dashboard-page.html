@@ -1,0 +1,198 @@
+<section class="dash">
+  <header class="dash__hero">
+    <p class="dash__eyebrow">Asesoría contable del inventario</p>
+    <div class="dash__hero-row">
+      <div>
+        <h1 class="dash__title">Hola, {{ firstName() }}</h1>
+        <p class="dash__date">{{ dateLabel }} · lectura automática de tu kardex</p>
+      </div>
+      <div class="dash__hero-actions">
+        <a class="btn btn--outline" routerLink="/inventario/existencias">
+          <app-icon name="package" /> Existencias
+        </a>
+        <a class="btn btn--primary" routerLink="/inventario/movimientos">
+          <app-icon name="plus" /> Registrar movimiento
+        </a>
+      </div>
+    </div>
+
+    @if (!loading()) {
+      <div class="dash-health" [attr.data-tone]="health().tone">
+        <div>
+          <p class="dash-health__label">{{ health().label }}</p>
+          <p class="dash-health__text">{{ health().text }}</p>
+        </div>
+        <span class="dash-health__pill">Opinión del tablero</span>
+      </div>
+
+      <article class="dash-briefing">
+        <p class="dash-briefing__eyebrow">El tablero te habla</p>
+        <h2 class="dash-briefing__title">Informe contable de hoy</h2>
+        @for (paragraph of briefing(); track $index) {
+          <p class="dash-briefing__p">{{ paragraph }}</p>
+        }
+      </article>
+    }
+  </header>
+
+  @if (error()) {
+    <p class="auth-error">{{ error() }}</p>
+  }
+
+  <section class="dash__kpis">
+    @for (kpi of kpis(); track kpi.label) {
+      <article class="dash-kpi" [attr.data-tone]="kpi.tone">
+        <p class="dash-kpi__label">{{ kpi.label }}</p>
+        <p class="dash-kpi__value">{{ loading() ? '…' : kpi.value }}</p>
+        <p class="dash-kpi__hint">{{ kpi.hint }}</p>
+        <span class="dash-kpi__delta" [attr.data-delta]="kpi.deltaTone">{{ kpi.delta }}</span>
+      </article>
+    }
+  </section>
+
+  @if (!loading() && insights().length) {
+    <section class="dash-insights">
+      <h2 class="dash-section-title">Recomendaciones del contador</h2>
+      <div class="dash-insights__grid">
+        @for (insight of insights(); track insight.title) {
+          <article class="dash-insight" [attr.data-tone]="insight.tone">
+            <p class="dash-insight__title">{{ insight.title }}</p>
+            <p class="dash-insight__detail">{{ insight.detail }}</p>
+            @if (insight.actionPath && insight.actionLabel) {
+              <a class="dash-link" [routerLink]="insight.actionPath">{{ insight.actionLabel }} →</a>
+            }
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="dash__grid">
+    <article class="dash-panel dash-panel--chart">
+      <div class="dash-panel__head">
+        <div>
+          <h2 class="dash-panel__title">Costo de mercancía salida</h2>
+          <p class="dash-panel__sub">Valor a costo que dejó el inventario (base del CMV operativo)</p>
+        </div>
+        <div class="dash-toggle" role="group" aria-label="Período del gráfico">
+          <button
+            type="button"
+            class="dash-toggle__btn"
+            [class.is-active]="period() === 'week'"
+            (click)="setPeriod('week')"
+          >
+            Esta semana
+          </button>
+          <button
+            type="button"
+            class="dash-toggle__btn"
+            [class.is-active]="period() === 'year'"
+            (click)="setPeriod('year')"
+          >
+            12 meses
+          </button>
+        </div>
+      </div>
+
+      <div class="dash-chart">
+        <div class="dash-chart__y">
+          <span>{{ chartMaxLabel() }}</span>
+          <span>$0</span>
+        </div>
+        <div class="dash-chart__bars">
+          @for (point of chartPoints(); track point.label) {
+            <div class="dash-chart__col">
+              <div class="dash-chart__bar-wrap">
+                <div
+                  class="dash-chart__bar"
+                  [style.height.%]="point.height"
+                  [attr.title]="point.label + ': ' + point.value"
+                ></div>
+              </div>
+              <span class="dash-chart__x">{{ point.label }}</span>
+            </div>
+          }
+        </div>
+      </div>
+      <p class="dash-chart__summary">{{ chartSummary() }}</p>
+    </article>
+
+    <article class="dash-panel">
+      <h2 class="dash-panel__title">Movimiento del activo (7 días)</h2>
+      <p class="dash-panel__sub">Entradas, salidas, traslados y ajustes valorizados</p>
+      <ul class="dash-mix">
+        @for (slice of mix(); track slice.label) {
+          <li class="dash-mix__item">
+            <div class="dash-mix__top">
+              <span class="dash-mix__label">
+                <i class="dash-mix__dot" [attr.data-tone]="slice.tone"></i>
+                {{ slice.label }}
+              </span>
+              <span class="dash-mix__money">{{ slice.money }}</span>
+            </div>
+            <div class="dash-mix__track">
+              <span class="dash-mix__fill" [attr.data-tone]="slice.tone" [style.width.%]="slice.pct"></span>
+            </div>
+            <span class="dash-mix__pct">{{ slice.pct }}%</span>
+          </li>
+        }
+      </ul>
+    </article>
+  </section>
+
+  <section class="dash__grid dash__grid--bottom">
+    <article class="dash-panel">
+      <div class="dash-panel__head">
+        <div>
+          <h2 class="dash-panel__title">SKU de mayor rotación</h2>
+          <p class="dash-panel__sub">30 días · donde más se mueve el capital</p>
+        </div>
+        <a class="dash-link" routerLink="/productos/listado">Catálogo</a>
+      </div>
+      @if (topItems().length === 0) {
+        <p class="dash-empty">Cuando registres salidas, aquí verás tus productos estrella.</p>
+      } @else {
+        <ul class="dash-rank">
+          @for (item of topItems(); track item.rank) {
+            <li class="dash-rank__item">
+              <span class="dash-rank__n">{{ item.rank }}</span>
+              <div class="dash-rank__body">
+                <span class="dash-rank__name">{{ item.name }}</span>
+                <span class="dash-rank__meta">{{ item.meta }}</span>
+              </div>
+              <span class="dash-rank__value">{{ item.value }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+
+    <article class="dash-panel">
+      <div class="dash-panel__head">
+        <div>
+          <h2 class="dash-panel__title">Exposición por quiebre</h2>
+          <p class="dash-panel__sub">Saldos bajo el mínimo · riesgo de ingreso perdido</p>
+        </div>
+        <a class="dash-link" routerLink="/inventario/existencias">Ver todo</a>
+      </div>
+      @if (lowStockItems().length === 0) {
+        <div class="dash-alert-ok">
+          <span class="dash-alert-ok__dot"></span>
+          Sin exposición: no hay saldos bajo el mínimo
+        </div>
+      } @else {
+        <ul class="dash-stock">
+          @for (item of lowStockItems(); track item.name + item.warehouse) {
+            <li class="dash-stock__item">
+              <div>
+                <p class="dash-stock__name">{{ item.name }}</p>
+                <p class="dash-stock__meta">{{ item.warehouse }}</p>
+              </div>
+              <span class="dash-stock__qty">{{ item.qty }} / min {{ item.min }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+  </section>
+</section>

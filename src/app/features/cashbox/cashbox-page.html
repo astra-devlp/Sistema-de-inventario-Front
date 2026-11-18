@@ -1,0 +1,221 @@
+<section class="caja">
+  <header class="caja__hero">
+    <p class="caja__eyebrow">Operación de caja</p>
+    <div class="caja__hero-row">
+      <div>
+        <h1 class="caja__title">Cierre de caja</h1>
+        <p class="caja__sub">
+          Turnos, efectivo inicial y resumen de ventas del turno · Hola, {{ userName() }}
+          @if (isPlatformAdmin()) {
+            · vista de todos los negocios
+          }
+        </p>
+      </div>
+    </div>
+
+    @if (!loading() && briefing().length) {
+      <article class="caja-briefing">
+        <p class="caja-briefing__eyebrow">Lectura del turno</p>
+        @for (p of briefing(); track $index) {
+          <p class="caja-briefing__p">{{ p }}</p>
+        }
+      </article>
+    }
+  </header>
+
+  @if (error()) {
+    <p class="auth-error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="caja__muted">Cargando turno…</p>
+  } @else if (!isOpen()) {
+    <article class="caja-open">
+      <div>
+        <h2 class="caja-open__title">Abrir turno</h2>
+        <p class="caja-open__text">
+          Cuenta el efectivo real en caja e indícalo como base. Sin turno abierto no se
+          registran ventas ni abonos.
+        </p>
+      </div>
+      <div class="caja-open__form">
+        <label class="label" for="caja-base">Base en caja</label>
+        <input
+          id="caja-base"
+          class="input"
+          type="number"
+          min="0"
+          step="100"
+          [(ngModel)]="openingCash"
+        />
+        <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="openShift()">
+          Abrir turno
+        </button>
+      </div>
+    </article>
+  } @else {
+    <article class="caja-status">
+      <div class="caja-status__left">
+        <span class="caja-pill">Turno abierto</span>
+        <div>
+          <p class="caja-status__since">Desde {{ formatWhen(shift()?.opened_at) }}</p>
+          <p class="caja-status__meta">
+            Base {{ money(shift()?.opening_cash || 0) }} · {{ shift()?.opened_by_email }}
+          </p>
+        </div>
+      </div>
+      <div class="caja-status__right">
+        <label class="label" for="caja-contado">Efectivo contado</label>
+        <div class="caja-status__actions">
+          <input
+            id="caja-contado"
+            class="input"
+            type="number"
+            min="0"
+            step="100"
+            [(ngModel)]="countedCash"
+          />
+          <button
+            type="button"
+            class="btn btn--danger"
+            [disabled]="submitting()"
+            (click)="closeShift()"
+          >
+            Cerrar turno
+          </button>
+        </div>
+        @if (expectedDiff() !== null) {
+          <p
+            class="caja-diff"
+            [attr.data-tone]="expectedDiff()! === 0 ? 'ok' : expectedDiff()! > 0 ? 'up' : 'down'"
+          >
+            @if (expectedDiff()! === 0) {
+              Cuadra con lo esperado
+            } @else if (expectedDiff()! > 0) {
+              Sobrante {{ money(expectedDiff()!) }}
+            } @else {
+              Faltante {{ money(abs(expectedDiff()!)) }}
+            }
+          </p>
+        }
+      </div>
+    </article>
+
+    <section class="caja__kpis">
+      <article class="caja-kpi">
+        <p class="caja-kpi__label">Ingresos de contado</p>
+        <p class="caja-kpi__value">{{ money(data()?.cash_income || 0) }}</p>
+        <p class="caja-kpi__hint">Efectivo + tarjeta + transferencia + abonos</p>
+      </article>
+      <article class="caja-kpi">
+        <p class="caja-kpi__label">Ventas del turno</p>
+        <p class="caja-kpi__value">{{ money(data()?.shift_sales || 0) }}</p>
+        <p class="caja-kpi__hint">{{ data()?.sales_count || 0 }} ventas netas</p>
+      </article>
+      <article class="caja-kpi">
+        <p class="caja-kpi__label">Efectivo esperado en caja</p>
+        <p class="caja-kpi__value">{{ money(data()?.expected_cash || 0) }}</p>
+        <p class="caja-kpi__hint">Base + efectivo de ventas y abonos</p>
+      </article>
+    </section>
+
+    <section class="caja-register">
+      <h2 class="caja-section-title">Registrar en el turno</h2>
+      <div class="caja-register__grid">
+        <label class="field">
+          <span class="label">Tipo</span>
+          <select class="select" [(ngModel)]="saleKind">
+            <option value="sale">Venta</option>
+            <option value="credit_payment">Abono a crédito</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="label">Método</span>
+          <select class="select" [(ngModel)]="saleMethod">
+            <option value="cash">Efectivo</option>
+            <option value="card">Tarjeta</option>
+            <option value="transfer">Transferencia</option>
+            @if (saleKind === 'sale') {
+              <option value="credit">Crédito</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="label">Monto</span>
+          <input class="input" type="number" min="0" step="100" [(ngModel)]="saleAmount" />
+        </label>
+        <label class="field">
+          <span class="label">Categoría</span>
+          <input class="input" type="text" placeholder="Ej. celular" [(ngModel)]="saleCategory" />
+        </label>
+        <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="registerSale()">
+          <app-icon name="plus" /> Registrar
+        </button>
+      </div>
+    </section>
+
+    <section class="caja__grid">
+      <article class="caja-panel">
+        <h2 class="caja-panel__title">Ventas por método de pago</h2>
+        <ul class="caja-list">
+          @for (line of data()?.by_payment || []; track line.key) {
+            <li>
+              <span>{{ line.label }}</span>
+              <strong>{{ money(line.amount) }}</strong>
+            </li>
+          }
+        </ul>
+        <h3 class="caja-panel__sub">Abonos a crédito cobrados</h3>
+        <ul class="caja-list">
+          @for (line of data()?.credit_payments || []; track line.key) {
+            <li>
+              <span>{{ line.label }}</span>
+              <strong>{{ money(line.amount) }}</strong>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="caja-panel">
+        <h2 class="caja-panel__title">Ventas por categoría</h2>
+        @if ((data()?.by_category || []).length === 0) {
+          <p class="caja__muted">Sin ventas categorizadas en este turno.</p>
+        } @else {
+          <ul class="caja-list">
+            @for (line of data()?.by_category || []; track line.key) {
+              <li>
+                <span>{{ line.label }}</span>
+                <strong>{{ money(line.amount) }}</strong>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+    </section>
+  }
+
+  <section class="caja-history">
+    <h2 class="caja-section-title">Historial de turnos</h2>
+    @if ((data()?.history || []).length === 0) {
+      <p class="caja__muted">
+        {{ isPlatformAdmin() ? 'Aún no hay turnos registrados en la plataforma.' : 'Aún no hay turnos en este negocio.' }}
+      </p>
+    } @else {
+      <ul class="caja-history__list">
+        @for (item of data()?.history || []; track item.id) {
+          <li class="caja-history__item">
+            <div>
+              <p class="caja-history__when">{{ formatWhen(item.opened_at) }}</p>
+              <p class="caja-history__meta">
+                Base {{ money(item.opening_cash) }} · {{ item.opened_by_email }}
+              </p>
+            </div>
+            <span class="caja-history__status" [attr.data-status]="item.status">
+              {{ statusLabel(item) }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</section>

@@ -1,39 +1,149 @@
 <div class="app-shell" [class.is-collapsed]="collapsed()">
-  <aside class="sidebar" [class.is-open]="drawerOpen()">
-    <div class="sidebar__brand">
-      <span class="sidebar__logo"><app-icon name="box" /></span>
-      <span class="sidebar__label">Inventario</span>
-    </div>
-
-    <nav class="sidebar__nav">
-      @for (group of groups; track group.id) {
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-header__left">
         <button
           type="button"
-          class="sidebar__group"
-          [attr.aria-expanded]="isExpanded(group.id)"
-          [title]="group.label"
-          (click)="toggleGroup(group.id)"
+          class="btn btn--icon topbar__menu"
+          aria-label="Abrir menú"
+          (click)="toggleDrawer()"
         >
-          <app-icon [name]="group.icon" />
-          <span class="sidebar__label">{{ group.label }}</span>
-          <app-icon class="sidebar__caret" [class.is-open]="isExpanded(group.id)" name="chevron-down" [size]="16" />
+          <app-icon name="menu" />
+        </button>
+        <button
+          type="button"
+          class="btn btn--icon topbar__collapse"
+          [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Contraer menú'"
+          (click)="toggleCollapsed()"
+        >
+          <app-icon name="panel-left" />
         </button>
 
-        @if (isExpanded(group.id) || collapsed()) {
-          <div class="sidebar__submenu">
-            @for (item of group.items; track item.path) {
-              <a
-                class="sidebar__link"
-                [routerLink]="item.path"
-                routerLinkActive="active"
-                [title]="item.label"
-                (click)="closeDrawer()"
+        <a class="app-header__brand" [routerLink]="homePath()" aria-label="Astra Dev">
+          <img
+            class="app-header__logo app-header__logo--mark brand-invert-light"
+            src="brand/logo-mark.png"
+            alt=""
+          />
+          <img
+            class="app-header__logo app-header__logo--horizontal brand-invert-light"
+            src="brand/logo-horizontal.png"
+            alt="Astra Dev"
+          />
+        </a>
+      </div>
+
+      <div class="app-header__right">
+        <button
+          type="button"
+          class="btn btn--icon topbar__theme"
+          (click)="theme.toggle()"
+          [attr.aria-label]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+        >
+          <span
+            class="material-symbols-outlined topbar__theme-icon"
+            [class.topbar__theme-icon--sun]="theme.theme() === 'dark'"
+            [class.topbar__theme-icon--moon]="theme.theme() !== 'dark'"
+            aria-hidden="true"
+          >
+            {{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}
+          </span>
+        </button>
+
+        <div class="topbar__menu-wrap" (click)="keepUserMenu($event)">
+          <button
+            type="button"
+            class="topbar__user"
+            [attr.aria-expanded]="userMenuOpen()"
+            aria-haspopup="menu"
+            (click)="toggleUserMenu($event)"
+          >
+            <span class="avatar">{{ initial() }}</span>
+            <span class="topbar__user-meta">
+              <span class="topbar__user-name">{{ user()?.name }}</span>
+              <span class="topbar__user-role">{{ user()?.role }}</span>
+            </span>
+            <span
+              class="material-symbols-outlined topbar__user-caret"
+              [class.is-open]="userMenuOpen()"
+              aria-hidden="true"
+            >expand_more</span>
+          </button>
+
+          @if (userMenuOpen()) {
+            <div class="topbar__dropdown" role="menu">
+              <button type="button" class="topbar__dropdown-item" role="menuitem" (click)="goTo('/cuenta')">
+                <app-icon name="user" />
+                Cuenta
+              </button>
+              <button type="button" class="topbar__dropdown-item" role="menuitem" (click)="goTo('/configuracion')">
+                <app-icon name="settings" />
+                Configuración
+              </button>
+              <button
+                type="button"
+                class="topbar__dropdown-item topbar__dropdown-item--danger"
+                role="menuitem"
+                (click)="logout()"
               >
-                <app-icon [name]="item.icon" />
-                <span class="sidebar__label">{{ item.label }}</span>
-              </a>
-            }
-          </div>
+                <app-icon name="logout" />
+                Cerrar sesión
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <aside class="sidebar" [class.is-open]="drawerOpen()">
+    <nav class="sidebar__nav">
+      @for (group of groups(); track group.id) {
+        @if (group.path) {
+          <a
+            class="sidebar__link sidebar__link--root"
+            [routerLink]="group.path"
+            routerLinkActive="active"
+            [title]="group.label"
+            (click)="closeDrawer()"
+          >
+            <app-icon [name]="group.icon" />
+            <span class="sidebar__label">{{ group.label }}</span>
+          </a>
+        } @else {
+          <button
+            type="button"
+            class="sidebar__group"
+            [attr.aria-expanded]="isExpanded(group.id)"
+            [title]="group.label"
+            (click)="toggleGroup(group.id)"
+          >
+            <app-icon [name]="group.icon" />
+            <span class="sidebar__label">{{ group.label }}</span>
+            <app-icon
+              class="sidebar__caret"
+              [class.is-open]="isExpanded(group.id)"
+              name="chevron-down"
+              [size]="16"
+            />
+          </button>
+
+          @if (isExpanded(group.id) || collapsed()) {
+            <div class="sidebar__submenu">
+              @for (item of group.items; track item.path) {
+                <a
+                  class="sidebar__link"
+                  [routerLink]="item.path"
+                  routerLinkActive="active"
+                  [title]="item.label"
+                  (click)="closeDrawer()"
+                >
+                  <app-icon [name]="item.icon" />
+                  <span class="sidebar__label">{{ item.label }}</span>
+                </a>
+              }
+            </div>
+          }
         }
       }
 
@@ -46,31 +156,10 @@
       }
     </nav>
   </aside>
+
   <div class="sidebar-backdrop" [class.is-open]="drawerOpen()" (click)="closeDrawer()"></div>
 
   <div class="main">
-    <header class="topbar">
-      <button type="button" class="btn btn--icon topbar__menu" aria-label="Abrir menú" (click)="toggleDrawer()">
-        <app-icon name="menu" />
-      </button>
-      <button
-        type="button"
-        class="btn btn--icon topbar__collapse"
-        [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Contraer menú'"
-        (click)="toggleCollapsed()"
-      >
-        <app-icon name="panel-left" />
-      </button>
-      <span class="topbar__spacer"></span>
-      <div class="topbar__user">
-        <span class="avatar">{{ initial() }}</span>
-        <span>{{ user()?.name }}</span>
-        <button type="button" class="btn btn--icon" aria-label="Cerrar sesión" (click)="logout()">
-          <app-icon name="logout" />
-        </button>
-      </div>
-    </header>
-
     <main class="content">
       <router-outlet />
     </main>

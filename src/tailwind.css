@@ -1,0 +1,108 @@
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@custom-variant light (&:where(.light, .light *));
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source './app/**/*.{html,ts}';
+
+@theme {
+  --color-background: #090a10;
+  --color-surface: #090a10;
+  --color-surface-dim: #090a10;
+  --color-surface-container-lowest: #07080c;
+  --color-surface-container-low: #11131b;
+  --color-surface-container: #171a24;
+  --color-surface-container-high: #1f2330;
+  --color-surface-container-highest: #292e3d;
+  --color-outline-variant: #2b3040;
+  --color-outline: #8a91a3;
+  --color-on-surface-variant: #aab1c2;
+  --color-on-surface: #e8eaf0;
+  --color-primary: #ffffff;
+  --color-accent: #7bd0ff;
+  --color-brand-solid: #2457d6;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-sans: 'Geist', sans-serif;
+  --font-body-md: 'Geist', sans-serif;
+  --font-body-sm: 'Geist', sans-serif;
+  --font-body-lg: 'Geist', sans-serif;
+
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 20px;
+  --text-body-md: 15px;
+  --text-body-md--line-height: 24px;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+
+  --spacing-margin-mobile: 1.25rem;
+  --spacing-margin-tablet: 2rem;
+  --spacing-margin: 4rem;
+
+  --animate-rise: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+html.light {
+  --color-background: #eef1f7;
+  --color-surface: #eef1f7;
+  --color-surface-dim: #eef1f7;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #ffffff;
+  --color-surface-container: #e8ecf4;
+  --color-surface-container-high: #dde3ee;
+  --color-surface-container-highest: #cfd7e5;
+  --color-outline-variant: #d0d7e3;
+  --color-outline: #5f6678;
+  --color-on-surface-variant: #3d4456;
+  --color-on-surface: #0b0e1c;
+  --color-primary: #0b0e1c;
+  --color-accent: #1d4ed8;
+  --color-brand-solid: #2457d6;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #991b1b;
+}
+
+@utility section-lede {
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--color-on-surface-variant);
+  max-width: 34rem;
+}
+
+@utility btn-brand {
+  color: #ffffff;
+  background-color: var(--color-brand-solid);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    background-color: #1c47bd;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}

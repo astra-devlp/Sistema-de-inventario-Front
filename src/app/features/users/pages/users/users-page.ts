@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { AuthUser } from '@core/auth/auth.model';
 import { AuthService, httpErrorMessage } from '@core/auth/auth.service';
-import { ConfirmModal } from '@shared/ui/confirm-modal/confirm-modal';
 import { Icon } from '@shared/ui/icon/icon';
 import { PageHeader } from '@shared/ui/page-header/page-header';
+import { SecureDeleteModal } from '@shared/ui/secure-delete-modal/secure-delete-modal';
 import { UsersApi } from '../../users.api';
 import { UserFormModal } from './modals/user-form-modal';
 
@@ -11,7 +11,7 @@ type UserModal = 'create' | 'edit' | 'delete' | null;
 
 @Component({
   selector: 'app-users-page',
-  imports: [PageHeader, Icon, UserFormModal, ConfirmModal],
+  imports: [PageHeader, Icon, UserFormModal, SecureDeleteModal],
   templateUrl: './users-page.html',
 })
 export class UsersPage {
@@ -40,12 +40,7 @@ export class UsersPage {
   }
 
   protected onSearch(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.search(value);
-  }
-
-  protected search(value: string): void {
-    this.query.set(value);
+    this.query.set((event.target as HTMLInputElement).value);
     this.load();
   }
 
@@ -74,7 +69,7 @@ export class UsersPage {
     this.error.set(null);
     this.api.list(this.query()).subscribe({
       next: (users) => {
-        this.users.set(users);
+        this.users.set(users.filter((user) => user.role === 'Usuario'));
         this.loading.set(false);
       },
       error: (err: unknown) => {

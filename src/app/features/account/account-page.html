@@ -1,0 +1,69 @@
+<app-page-header
+  title="Mi cuenta"
+  subtitle="Estos son los datos que guarda el sistema para tu acceso."
+/>
+
+<section class="card" style="max-width: 560px">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full">{{ error() }}</p>
+    }
+    @if (success()) {
+      <p class="badge badge--success field--full" style="padding: 10px 12px">{{ success() }}</p>
+    }
+
+    <div class="field field--full">
+      <label class="label" for="acc-name">Nombre <span class="required">*</span></label>
+      <input id="acc-name" class="input" type="text" formControlName="name" />
+      <span class="hint">Cómo te mostramos en la barra superior.</span>
+    </div>
+
+    <div class="field field--full">
+      <label class="label" for="acc-email">Correo <span class="required">*</span></label>
+      <input id="acc-email" class="input" type="email" formControlName="email" />
+      <span class="hint">Lo usas para iniciar sesión.</span>
+    </div>
+
+    <div class="field field--full">
+      <label class="label" for="acc-phone">Teléfono</label>
+      <input id="acc-phone" class="input" type="tel" formControlName="phone" placeholder="Opcional" />
+      <span class="hint">Opcional. Si lo llenas, usa 9 o 10 dígitos.</span>
+    </div>
+
+    <div class="field">
+      <label class="label" for="acc-role">Rol</label>
+      <input id="acc-role" class="input" type="text" [value]="user()?.role || ''" disabled />
+      <span class="hint">Lo asigna un administrador. No se cambia aquí.</span>
+    </div>
+
+    <div class="field">
+      <label class="label" for="acc-status">Estado</label>
+      <input
+        id="acc-status"
+        class="input"
+        type="text"
+        [value]="user()?.is_active ? 'Activo' : 'Inactivo'"
+        disabled
+      />
+    </div>
+
+    <div class="field field--full">
+      <label class="label" for="acc-password">Nueva contraseña</label>
+      <input
+        id="acc-password"
+        class="input"
+        type="password"
+        formControlName="password"
+        autocomplete="new-password"
+        placeholder="Opcional"
+      />
+      <span class="hint">Déjala vacía si no quieres cambiarla. Mínimo 8 caracteres.</span>
+    </div>
+
+    <div class="field--full" style="display: flex; justify-content: flex-end">
+      <button type="submit" class="btn btn--primary" [disabled]="submitting()">
+        {{ submitting() ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </form>
+</section>

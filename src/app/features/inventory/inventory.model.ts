@@ -126,6 +126,13 @@ export const MOVEMENT_BADGE: Record<MovementType, string> = {
   traslado: 'badge--primary',
 };
 
+export const MOVEMENT_ICON: Record<MovementType, 'upload' | 'download' | 'settings' | 'arrows'> = {
+  entrada: 'upload',
+  salida: 'download',
+  ajuste: 'settings',
+  traslado: 'arrows',
+};
+
 export function toNumber(value: DecimalValue | null | undefined): number {
   if (value === null || value === undefined || value === '') return 0;
   const parsed = typeof value === 'number' ? value : Number(value);
