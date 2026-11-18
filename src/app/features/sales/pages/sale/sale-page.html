@@ -15,6 +15,23 @@
     <p class="auth-error" role="alert">{{ receiptError() }}</p>
   }
 
+  @if (pending(); as p) {
+    <div class="auth-error sale__pending" role="alert">
+      <strong>Hay un cobro sin confirmar.</strong>
+      <p>
+        Se envió {{ p.saved_at | date: 'HH:mm' }} y no llegó una respuesta: puede que sí se haya cobrado. Reintenta con la misma clave
+        (si ya estaba registrado, se muestra ese mismo comprobante y no se vende otra vez) o, solo si confirmas que no se cobró,
+        descártalo.
+      </p>
+      <div class="sale__receipt-actions">
+        <button type="button" class="btn btn--primary" [disabled]="charging()" (click)="retryPending()">
+          {{ charging() ? 'Reintentando…' : 'Reintentar cobro' }}
+        </button>
+        <button type="button" class="btn btn--outline" [disabled]="charging()" (click)="askDiscard()">Descartar</button>
+      </div>
+    </div>
+  }
+
   <div class="sale">
     <section class="sale__main">
       <div class="sale__search">
@@ -134,6 +151,10 @@
       <p class="hint">El valor definitivo lo calcula el servidor al cobrar.</p>
     </aside>
   </div>
+
+  <app-confirm-modal [open]="discardOpen()" title="Descartar cobro sin confirmar"
+    message="¿Confirmas que ese cobro NO se hizo? Si el cliente ya pagó o la venta quedó registrada, no lo descartes: reintenta."
+    confirmLabel="Sí, no se cobró" (closed)="discardOpen.set(false)" (confirmed)="discardPending()" />
 
   <app-charge-modal [open]="chargeOpen()" [total]="total()" [busy]="charging()" [error]="chargeError()"
     (closed)="closeCharge()" (confirm)="charge($event)" />

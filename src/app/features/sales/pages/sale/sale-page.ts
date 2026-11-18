@@ -1,7 +1,8 @@
 import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { httpErrorMessage } from '@core/auth/auth.service';
+import { AuthService, httpErrorMessage } from '@core/auth/auth.service';
 import { formatCop } from '@core/money/money';
 import { ProductsApi } from '@features/products/products.api';
 import { ShiftApi } from '@features/cash-shift/shift.api';
@@ -9,9 +10,11 @@ import { Shift } from '@features/cash-shift/shift.model';
 import { isNoCurrentShift } from '@features/cash-shift/shift-rules';
 import { formatQuantity } from '../../../stock/quantity';
 import { shortageLines } from '../../../stock/stock-errors';
+import { ConfirmModal } from '@shared/ui/confirm-modal/confirm-modal';
 import { PageHeader } from '@shared/ui/page-header/page-header';
 import { CartLine, addProduct, cartPreviewTotal, decideLookup, removeLine, setLineQuantity } from '../../cart';
 import { IdempotencyKeys } from '../../idempotency';
+import { PendingCharge, clearPendingCharge, isDefinitiveError, loadPendingCharge, pendingPayload, savePendingCharge } from '../../pending-charge';
 import { lineTotal } from '../../sale-math';
 import { saleErrorKind, saleErrorMessage, saleRowErrors } from '../../sale-errors';
 import { PosProduct, Sale } from '../../sale.model';
@@ -23,7 +26,7 @@ type UnitTypes = Map<number, 'Cantidad' | 'Peso' | 'Volumen' | 'Longitud'>;
 
 @Component({
   selector: 'app-sale-page',
-  imports: [FormsModule, PageHeader, ChargeModal, Receipt],
+  imports: [DatePipe, FormsModule, PageHeader, ChargeModal, Receipt, ConfirmModal],
   templateUrl: './sale-page.html',
 })
 export class SalePage {
@@ -31,6 +34,7 @@ export class SalePage {
   private readonly shiftApi = inject(ShiftApi);
   private readonly productsApi = inject(ProductsApi);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
   private readonly keys = new IdempotencyKeys();
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchBox');
 
@@ -59,6 +63,10 @@ export class SalePage {
   protected readonly charging = signal(false);
   protected readonly chargeError = signal<string | null>(null);
 
+  /** Cobro enviado sin respuesta definitiva (red caída o 5xx): puede o no haberse cobrado. */
+  protected readonly pending = signal<PendingCharge | null>(null);
+  protected readonly discardOpen = signal(false);
+
   protected readonly receipt = signal<Sale | null>(null);
   protected readonly receiptNote = signal<string | null>(null);
   protected readonly receiptQuery = signal('');
@@ -67,7 +75,7 @@ export class SalePage {
 
   protected readonly total = computed(() => cartPreviewTotal(this.lines()));
   protected readonly canCharge = computed(
-    () => this.lines().length > 0 && this.qtyErrors().size === 0 && !this.charging() && this.shift() !== null,
+    () => this.lines().length > 0 && this.qtyErrors().size === 0 && !this.charging() && this.shift() !== null && this.pending() === null,
   );
 
   constructor() {
@@ -96,6 +104,8 @@ export class SalePage {
 
   private finishLoading(): void {
     this.loading.set(false);
+    const userId = this.auth.user()?.id;
+    this.pending.set(userId === undefined ? null : loadPendingCharge(userId));
     this.focusSearch();
   }
 
@@ -219,26 +229,76 @@ export class SalePage {
       payments: request.payments,
       customer_id: request.customerId,
     };
-    const idempotency_key = this.keys.keyFor(body);
+    const payload = { idempotency_key: this.keys.keyFor(body), ...body };
     this.charging.set(true);
     this.chargeError.set(null);
-    this.api.create({ idempotency_key, ...body }).subscribe({
+    // Hasta tener una respuesta definitiva, el cobro queda guardado: si se recarga la página no se pierde la clave.
+    const userId = this.auth.user()?.id;
+    if (userId !== undefined) savePendingCharge(payload, userId);
+    this.api.create(payload).subscribe({
       next: ({ sale, replay }) => {
-        this.charging.set(false);
-        this.keys.renew();
+        this.finishSale(sale, replay);
         this.chargeOpen.set(false);
-        this.receipt.set(sale);
-        this.receiptNote.set(replay ? 'Esta venta ya estaba registrada: es el mismo comprobante, no se vendió otra vez.' : null);
-        this.lines.set([]);
-        this.qtyErrors.set(new Map());
-        this.resetServerErrors();
-        this.focusSearch();
       },
       error: (err) => {
         this.charging.set(false);
-        this.handleChargeError(err);
+        if (isDefinitiveError(err)) {
+          clearPendingCharge();
+          this.handleChargeError(err);
+          return;
+        }
+        // Sin respuesta definitiva: pudo cobrarse. Queda pendiente y bloquea otro cobro hasta resolverlo.
+        this.chargeOpen.set(false);
+        this.pending.set(userId === undefined ? null : loadPendingCharge(userId));
+        this.notice.set(saleErrorMessage(err));
       },
     });
+  }
+
+  private finishSale(sale: Sale, replay: boolean): void {
+    this.charging.set(false);
+    clearPendingCharge();
+    this.pending.set(null);
+    this.keys.renew();
+    this.receipt.set(sale);
+    this.receiptNote.set(replay ? 'Esta venta ya estaba registrada: es el mismo comprobante, no se vendió otra vez.' : null);
+    this.lines.set([]);
+    this.qtyErrors.set(new Map());
+    this.resetServerErrors();
+    this.focusSearch();
+  }
+
+  /** Reintenta el cobro sin confirmar con la misma clave: si ya se había cobrado, el back devuelve esa venta (200). */
+  protected retryPending(): void {
+    const pending = this.pending();
+    if (!pending || this.charging()) return;
+    this.charging.set(true);
+    this.notice.set(null);
+    this.api.create(pendingPayload(pending)).subscribe({
+      next: ({ sale, replay }) => this.finishSale(sale, replay),
+      error: (err) => {
+        this.charging.set(false);
+        if (isDefinitiveError(err)) {
+          clearPendingCharge();
+          this.pending.set(null);
+          this.keys.renew();
+        }
+        this.notice.set(saleErrorMessage(err, 'No se pudo confirmar el cobro'));
+      },
+    });
+  }
+
+  protected askDiscard(): void {
+    this.discardOpen.set(true);
+  }
+
+  /** El usuario confirma que no se cobró: se descarta y se puede volver a vender. */
+  protected discardPending(): void {
+    clearPendingCharge();
+    this.pending.set(null);
+    this.keys.renew();
+    this.discardOpen.set(false);
+    this.focusSearch();
   }
 
   private handleChargeError(err: unknown): void {
