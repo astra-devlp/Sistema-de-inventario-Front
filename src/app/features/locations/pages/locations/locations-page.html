@@ -1,0 +1,181 @@
+<app-page-header
+  title="Sedes y cajas"
+  subtitle="Dónde se vende y con qué cajas. Cada caja pertenece a una sede y su código es el prefijo de sus recibos."
+/>
+
+@if (error()) {
+  <p class="auth-error" style="margin-bottom: 16px" role="alert">
+    {{ error() }}
+    @if (offer() && isAdmin()) {
+      <button type="button" class="btn btn--outline" style="margin-left: 12px" (click)="acceptOffer()">
+        Desactivar
+      </button>
+    }
+  </p>
+}
+
+@if (withoutLocation()) {
+  <p class="auth-error" role="status">{{ noLocationMessage }}</p>
+}
+
+<section class="card" style="margin-bottom: 24px">
+  <div class="toolbar">
+    <h2 class="acc-panel__title">Sedes</h2>
+    @if (isAdmin()) {
+      <button type="button" class="btn btn--primary" (click)="openLocation(null)">
+        <app-icon name="plus" /> Nueva sede
+      </button>
+    }
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Teléfono</th>
+          <th>Estado</th>
+          @if (isAdmin()) {
+            <th class="col-actions">Acciones</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (location of visibleLocations(); track location.id) {
+          <tr>
+            <td>
+              {{ location.name }}
+              @if (location.is_default) {
+                <span class="badge badge--primary">Por defecto</span>
+              }
+            </td>
+            <td class="text-muted">{{ location.address || '—' }}</td>
+            <td class="text-muted">{{ location.phone || '—' }}</td>
+            <td>
+              <span class="badge" [class.badge--success]="location.is_active" [class.badge--danger]="!location.is_active">
+                {{ location.is_active ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            @if (isAdmin()) {
+              <td class="col-actions">
+                @if (!location.is_default && location.is_active) {
+                  <button type="button" class="btn btn--outline" (click)="makeDefault(location)">Por defecto</button>
+                }
+                @if (!location.is_default) {
+                  <button type="button" class="btn btn--outline" (click)="toggleLocation(location)">
+                    {{ location.is_active ? 'Desactivar' : 'Activar' }}
+                  </button>
+                }
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="openLocation(location)">
+                  <app-icon name="edit" />
+                </button>
+                @if (!location.is_default) {
+                  <button type="button" class="btn btn--icon" aria-label="Eliminar" (click)="askDelete('location', location)">
+                    <app-icon name="trash" />
+                  </button>
+                }
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr>
+            <td [attr.colspan]="isAdmin() ? 5 : 4">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando sedes…' : 'No hay sedes' }}</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="toolbar">
+    <h2 class="acc-panel__title">Cajas</h2>
+    @if (isAdmin()) {
+      <button type="button" class="btn btn--primary" (click)="openRegister(null)">
+        <app-icon name="plus" /> Nueva caja
+      </button>
+    }
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Sede</th>
+          <th>Estado</th>
+          @if (isAdmin()) {
+            <th class="col-actions">Acciones</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (register of registers(); track register.id) {
+          <tr>
+            <td><strong>{{ register.code }}</strong></td>
+            <td>{{ register.name }}</td>
+            <td class="text-muted">{{ locationName(register.location_id) }}</td>
+            <td>
+              <span class="badge" [class.badge--success]="register.is_active" [class.badge--danger]="!register.is_active">
+                {{ register.is_active ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            @if (isAdmin()) {
+              <td class="col-actions">
+                <button type="button" class="btn btn--outline" (click)="toggleRegister(register)">
+                  {{ register.is_active ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="openRegister(register)">
+                  <app-icon name="edit" />
+                </button>
+                <button type="button" class="btn btn--icon" aria-label="Eliminar" (click)="askDelete('register', register)">
+                  <app-icon name="trash" />
+                </button>
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr>
+            <td [attr.colspan]="isAdmin() ? 5 : 4">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando cajas…' : 'No hay cajas' }}</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-location-form-modal
+  [open]="modal() === 'location'"
+  [location]="selectedLocation()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
+<app-cash-register-form-modal
+  [open]="modal() === 'register'"
+  [register]="selectedRegister()"
+  [locations]="locations()"
+  (closed)="close()"
+  (saved)="saved()"
+/>
+<app-confirm-modal
+  [open]="modal() === 'delete-location'"
+  title="Eliminar sede"
+  [message]="'¿Eliminar la sede «' + (selectedLocation()?.name || '') + '»?'"
+  (closed)="close()"
+  (confirmed)="removeLocation()"
+/>
+<app-confirm-modal
+  [open]="modal() === 'delete-register'"
+  title="Eliminar caja"
+  [message]="'¿Eliminar la caja «' + (selectedRegister()?.code || '') + '»?'"
+  (closed)="close()"
+  (confirmed)="removeRegister()"
+/>

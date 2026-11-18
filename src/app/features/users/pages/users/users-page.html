@@ -26,7 +26,14 @@
   </div>
 
   @if (error()) {
-    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+    <p class="auth-error" style="margin: 16px">
+      {{ error() }}
+      @if (offer()) {
+        <button type="button" class="btn btn--outline" style="margin-left: 12px" (click)="deactivate()">
+          Desactivar
+        </button>
+      }
+    </p>
   }
 
   <div class="table-wrap">
@@ -61,6 +68,9 @@
             </td>
             @if (auth.canManageStaff()) {
               <td class="col-actions">
+                <button type="button" class="btn btn--icon" aria-label="Sedes" title="Sedes" (click)="open('locations', user)">
+                  <app-icon name="warehouse" />
+                </button>
                 <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', user)">
                   <app-icon name="edit" />
                 </button>
@@ -89,6 +99,12 @@
   (closed)="close()"
   (saved)="saved()"
   (deleteRequested)="open('delete', selected())"
+/>
+<app-user-locations-modal
+  [open]="modal() === 'locations'"
+  [user]="selected()"
+  (closed)="close()"
+  (saved)="close()"
 />
 <app-secure-delete-modal
   [open]="modal() === 'delete'"

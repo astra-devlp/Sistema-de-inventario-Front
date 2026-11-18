@@ -1,0 +1,25 @@
+<app-modal [open]="open()" [title]="location() ? 'Editar sede' : 'Nueva sede'" (closed)="closed.emit()">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full">{{ error() }}</p>
+    }
+    <div class="field field--full">
+      <label class="label" for="lf-name">Nombre <span class="required">*</span></label>
+      <input id="lf-name" class="input" type="text" formControlName="name" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="lf-address">Dirección</label>
+      <input id="lf-address" class="input" type="text" formControlName="address" />
+    </div>
+    <div class="field">
+      <label class="label" for="lf-phone">Teléfono</label>
+      <input id="lf-phone" class="input" type="tel" formControlName="phone" />
+    </div>
+  </form>
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>

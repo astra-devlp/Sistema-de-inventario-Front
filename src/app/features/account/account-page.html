@@ -74,6 +74,11 @@
                     autocomplete="address-level2"
                   />
                 </div>
+                <div class="field">
+                  <label class="label" for="acc-company-window">Plazo de devolución (días)</label>
+                  <input id="acc-company-window" class="input" type="number" min="0" max="365" step="1" formControlName="return_window_days" />
+                  <span class="hint">0: solo el mismo día. Pasado el plazo, solo un Administrador autoriza la devolución.</span>
+                </div>
                 <div class="field field--full">
                   <label class="label" for="acc-company-address">Dirección</label>
                   <input
@@ -99,6 +104,10 @@
                 <div class="business-profile__item">
                   <dt>Ciudad</dt>
                   <dd>{{ display(company()?.city) }}</dd>
+                </div>
+                <div class="business-profile__item">
+                  <dt>Plazo de devolución</dt>
+                  <dd>{{ company()?.return_window_days }} días</dd>
                 </div>
                 <div class="business-profile__item business-profile__item--full">
                   <dt>Dirección</dt>

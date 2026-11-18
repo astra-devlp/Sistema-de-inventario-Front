@@ -39,7 +39,7 @@ export class ProductsApi {
     return this.http.post<Product>(`${API_URL}/products`, payload);
   }
 
-  update(id: number, payload: ProductPayload): Observable<Product> {
+  update(id: number, payload: Partial<ProductPayload>): Observable<Product> {
     return this.http.patch<Product>(`${API_URL}/products/${id}`, payload);
   }
 

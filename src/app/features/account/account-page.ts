@@ -3,6 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { roleLabel, userContextLabel } from '@core/auth/auth.model';
 import { AuthService, httpErrorMessage } from '@core/auth/auth.service';
 import { CompanyService } from '@core/company/company.service';
+import { validReturnWindow } from '@features/locations/location-rules';
 import { UsersApi } from '@features/users/users.api';
 
 /** Teléfono opcional: vacío o 9–10 dígitos. */
@@ -45,6 +46,7 @@ export class AccountPage {
     phone: new FormControl('', { nonNullable: true, validators: [Validators.pattern(OPTIONAL_PHONE)] }),
     address: new FormControl('', { nonNullable: true }),
     city: new FormControl('', { nonNullable: true }),
+    return_window_days: new FormControl<number | null>(0),
   });
 
   constructor() {
@@ -64,6 +66,7 @@ export class AccountPage {
         phone: company.phone ?? '',
         address: company.address ?? '',
         city: company.city ?? '',
+        return_window_days: company.return_window_days,
       });
       if (this.canEdit()) this.companyForm.enable({ emitEvent: false });
       else this.companyForm.disable({ emitEvent: false });
@@ -130,6 +133,10 @@ export class AccountPage {
       return;
     }
     const raw = form.getRawValue();
+    if (!validReturnWindow(raw.return_window_days)) {
+      this.error.set('El plazo de devolución es un número entero de días entre 0 y 365');
+      return;
+    }
 
     this.begin();
     this.companyApi
@@ -138,6 +145,7 @@ export class AccountPage {
         phone: raw.phone.trim() || null,
         address: raw.address.trim() || null,
         city: raw.city.trim() || null,
+        return_window_days: raw.return_window_days as number,
       })
       .subscribe({
         next: (company) => {

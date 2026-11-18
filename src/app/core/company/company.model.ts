@@ -21,4 +21,6 @@ export interface CompanyUpdatePayload {
   phone?: string | null;
   address?: string | null;
   city?: string | null;
+  /** Días calendario en que una venta admite devoluciones (0 a 365; 0: solo el mismo día). */
+  return_window_days?: number;
 }

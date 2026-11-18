@@ -81,3 +81,17 @@ export function httpErrorMessage(error: unknown, fallback: string): string {
   if (error.status >= 500) return `${fallback}. Error del servidor (${error.status})`;
   return fallback;
 }
+
+/** 409: la API se negó por el estado actual de los datos (con historial, en uso, repetido…). */
+export function isConflict(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === 409;
+}
+
+/**
+ * Mensaje de un borrado que la API rechazó. Con 409 el registro tiene historial: se muestra el motivo de la API y
+ * se propone desactivarlo, que es lo que el back pide en esos casos.
+ */
+export function deleteConflictMessage(error: unknown, fallback: string): string {
+  const message = httpErrorMessage(error, fallback);
+  return isConflict(error) ? `${message}. Puedes desactivarlo en su lugar.` : message;
+}

@@ -42,6 +42,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/customers/customers.routes').then((m) => m.CUSTOMERS_ROUTES),
       },
       {
+        path: 'sedes',
+        canActivate: [roleGuard(...COMPANY_ROLES)],
+        loadChildren: () => import('./features/locations/locations.routes').then((m) => m.LOCATIONS_ROUTES),
+      },
+      {
         path: 'usuarios',
         canActivate: [roleGuard('Administrador')],
         loadChildren: () => import('./features/users/users.routes').then((m) => m.USERS_ROUTES),

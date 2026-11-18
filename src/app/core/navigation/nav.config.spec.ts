@@ -13,13 +13,13 @@ describe('menú por rol', () => {
     expect(ids('Administrador de plataforma')).toEqual(['platform']);
   });
 
-  it('el Administrador de la empresa ve Productos, Clientes y Usuarios', () => {
-    expect(ids('Administrador')).toEqual(['products', 'customers', 'users']);
+  it('el Administrador de la empresa ve Productos, Clientes, Sedes y Usuarios', () => {
+    expect(ids('Administrador')).toEqual(['products', 'customers', 'locations', 'users']);
   });
 
-  it('el Supervisor y el Cajero ven Productos y Clientes, no Usuarios ni Plataforma', () => {
-    expect(ids('Supervisor')).toEqual(['products', 'customers']);
-    expect(ids('Usuario')).toEqual(['products', 'customers']);
+  it('el Supervisor y el Cajero ven Productos, Clientes y Sedes, no Usuarios ni Plataforma', () => {
+    expect(ids('Supervisor')).toEqual(['products', 'customers', 'locations']);
+    expect(ids('Usuario')).toEqual(['products', 'customers', 'locations']);
   });
 
   it('sin rol no se ve ningún grupo restringido', () => {
@@ -46,7 +46,7 @@ describe('enlaces del menú', () => {
   });
 
   it('las rutas de negocio y de plataforma están protegidas por rol', () => {
-    for (const path of ['plataforma', 'productos', 'clientes', 'usuarios']) {
+    for (const path of ['plataforma', 'productos', 'clientes', 'sedes', 'usuarios']) {
       const route = layout?.children?.find((child) => child.path === path);
       expect(route?.canActivate?.length, `${path} sin guard de rol`).toBeGreaterThan(0);
     }

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { apiRowErrors, httpErrorMessage, isPlanExpired, retryAfterSeconds } from './api-error';
+import { apiRowErrors, deleteConflictMessage, httpErrorMessage, isConflict, isPlanExpired, retryAfterSeconds } from './api-error';
 
 function httpError(status: number, body?: unknown, headers?: Record<string, string>): HttpErrorResponse {
   return new HttpErrorResponse({ status, error: body, headers: new HttpHeaders(headers) });
@@ -117,5 +117,25 @@ describe('apiRowErrors', () => {
     expect(apiRowErrors(httpError(422, { detail: 'texto' }))).toEqual([]);
     expect(apiRowErrors(httpError(422, { detail: [{ loc: ['body'], msg: 'x' }] }))).toEqual([]);
     expect(apiRowErrors(new Error('x'))).toEqual([]);
+  });
+});
+
+describe('isConflict y deleteConflictMessage', () => {
+  it('solo el 409 es un conflicto', () => {
+    expect(isConflict(httpError(409, { detail: 'x' }))).toBe(true);
+    for (const status of [400, 403, 404, 422, 500]) expect(isConflict(httpError(status))).toBe(false);
+    expect(isConflict(new Error('x'))).toBe(false);
+  });
+
+  it('un 409 al borrar muestra el motivo de la API y propone desactivar', () => {
+    const detail = 'La sede tiene movimientos de stock: desactívala en lugar de eliminarla';
+    expect(deleteConflictMessage(httpError(409, { detail }), 'No se pudo eliminar')).toBe(
+      `${detail}. Puedes desactivarlo en su lugar.`,
+    );
+  });
+
+  it('otros errores no proponen desactivar', () => {
+    expect(deleteConflictMessage(httpError(404, { detail: 'Caja no encontrada' }), 'x')).toBe('Caja no encontrada');
+    expect(deleteConflictMessage(httpError(403), 'No se pudo eliminar')).toContain('No tienes permiso');
   });
 });
