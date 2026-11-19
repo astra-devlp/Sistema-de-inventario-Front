@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { deleteConflictMessage, isConflict } from '@core/api/api-error';
 import { httpErrorMessage } from '@core/auth/auth.service';
 import { ConfirmModal } from '@shared/ui/confirm-modal/confirm-modal';
 import { Icon } from '@shared/ui/icon/icon';
@@ -26,10 +27,12 @@ export class ProductsPage {
   protected readonly query = signal('');
   protected readonly categoryId = signal<number | null>(null);
   protected readonly isActive = signal<boolean | null>(null);
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<ProductModal>(null);
   protected readonly selected = signal<Product | null>(null);
+  /** Producto que no se pudo borrar por tener historial: se propone desactivarlo. */
+  protected readonly offer = signal<Product | null>(null);
   protected readonly formatMoney = formatMoney;
 
   private readonly categoryNames = computed(() => new Map(this.catalogs().categories.map((c) => [c.id, c.name])));
@@ -109,7 +112,20 @@ export class ProductsPage {
       },
       error: (err: unknown) => {
         this.close();
-        this.error.set(httpErrorMessage(err, 'No se pudo eliminar el producto'));
+        this.error.set(deleteConflictMessage(err, 'No se pudo eliminar el producto'));
+        this.offer.set(isConflict(err) && product.is_active ? product : null);
+      },
+    });
+  }
+
+  protected deactivate(): void {
+    const product = this.offer();
+    if (!product) return;
+    this.api.update(product.id, { is_active: false }).subscribe({
+      next: () => this.reload(),
+      error: (err: unknown) => {
+        this.offer.set(null);
+        this.error.set(httpErrorMessage(err, 'No se pudo desactivar el producto'));
       },
     });
   }
@@ -125,6 +141,7 @@ export class ProductsPage {
   private load(): void {
     this.loading.set(true);
     this.error.set(null);
+    this.offer.set(null);
     this.api.list({ query: this.query(), categoryId: this.categoryId(), isActive: this.isActive() }).subscribe({
       next: (products) => {
         this.products.set(products);

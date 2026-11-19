@@ -7,6 +7,14 @@
   NPM_CONFIG_PRODUCTION = "false"
   COREPACK_INTEGRITY_KEYS = "0"
 
+# API: Netlify reenvía /api/* a Render. Para el navegador la API queda en el mismo
+# sitio que el front, así la cookie de sesión httpOnly funciona en todos los navegadores.
+[[redirects]]
+  from = "/api/*"
+  to = "https://sistema-de-inventario-back.onrender.com/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

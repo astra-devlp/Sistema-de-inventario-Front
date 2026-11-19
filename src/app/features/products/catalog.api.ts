@@ -1,7 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
+import { ProductsApi } from './products.api';
 import {
   Barcode,
   BarcodePayload,
@@ -15,15 +16,18 @@ import {
   PricePayload,
   ProductOption,
   Tax,
-  TaxPayload,
   Unit,
-  UnitPayload,
 } from './catalog.model';
 
 /** CRUD de los catálogos del producto. Cada pantalla de Productos usa la parte que le toca. */
 @Injectable({ providedIn: 'root' })
 export class CatalogApi {
   private readonly http = inject(HttpClient);
+  private readonly productsApi = inject(ProductsApi);
+
+  private bustProductCatalogCache<T>(): (source: Observable<T>) => Observable<T> {
+    return tap(() => this.productsApi.invalidateCatalogs());
+  }
 
   products(): Observable<ProductOption[]> {
     return this.http.get<ProductOption[]>(`${API_URL}/products`);
@@ -42,33 +46,21 @@ export class CatalogApi {
   }
 
   createCategory(payload: CategoryPayload): Observable<Category> {
-    return this.http.post<Category>(`${API_URL}/categories`, payload);
+    return this.http.post<Category>(`${API_URL}/categories`, payload).pipe(this.bustProductCatalogCache());
   }
 
   updateCategory(id: number, payload: CategoryPayload): Observable<Category> {
-    return this.http.patch<Category>(`${API_URL}/categories/${id}`, payload);
+    return this.http.patch<Category>(`${API_URL}/categories/${id}`, payload).pipe(this.bustProductCatalogCache());
   }
 
   deleteCategory(id: number): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/categories/${id}`);
+    return this.http.delete<void>(`${API_URL}/categories/${id}`).pipe(this.bustProductCatalogCache());
   }
 
-  // Unidades y presentaciones
+  // Unidades (solo lectura: las escribe plataforma) y presentaciones
 
   units(): Observable<Unit[]> {
     return this.http.get<Unit[]>(`${API_URL}/units`);
-  }
-
-  createUnit(payload: UnitPayload): Observable<Unit> {
-    return this.http.post<Unit>(`${API_URL}/units`, payload);
-  }
-
-  updateUnit(id: number, payload: UnitPayload): Observable<Unit> {
-    return this.http.patch<Unit>(`${API_URL}/units/${id}`, payload);
-  }
-
-  deleteUnit(id: number): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/units/${id}`);
   }
 
   presentations(): Observable<Presentation[]> {
@@ -76,33 +68,23 @@ export class CatalogApi {
   }
 
   createPresentation(payload: PresentationPayload): Observable<Presentation> {
-    return this.http.post<Presentation>(`${API_URL}/presentations`, payload);
+    return this.http.post<Presentation>(`${API_URL}/presentations`, payload).pipe(this.bustProductCatalogCache());
   }
 
   updatePresentation(id: number, payload: PresentationPayload): Observable<Presentation> {
-    return this.http.patch<Presentation>(`${API_URL}/presentations/${id}`, payload);
+    return this.http
+      .patch<Presentation>(`${API_URL}/presentations/${id}`, payload)
+      .pipe(this.bustProductCatalogCache());
   }
 
   deletePresentation(id: number): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/presentations/${id}`);
+    return this.http.delete<void>(`${API_URL}/presentations/${id}`).pipe(this.bustProductCatalogCache());
   }
 
-  // IVA
+  // IVA (solo lectura: lo escribe plataforma; el por defecto va en `PUT /companies/me/default-tax`)
 
   taxes(): Observable<Tax[]> {
     return this.http.get<Tax[]>(`${API_URL}/taxes`);
-  }
-
-  createTax(payload: TaxPayload): Observable<Tax> {
-    return this.http.post<Tax>(`${API_URL}/taxes`, payload);
-  }
-
-  updateTax(id: number, payload: TaxPayload): Observable<Tax> {
-    return this.http.patch<Tax>(`${API_URL}/taxes/${id}`, payload);
-  }
-
-  deleteTax(id: number): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/taxes/${id}`);
   }
 
   // Códigos de barras

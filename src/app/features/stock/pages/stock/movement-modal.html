@@ -1,0 +1,45 @@
+<app-modal [open]="state() !== null" [title]="title()" (closed)="closed.emit()">
+  <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @for (message of errors(); track message) {
+      <p class="auth-error field--full">{{ message }}</p>
+    }
+    <div class="field field--full">
+      <span class="label">Producto</span>
+      <p>
+        <strong>{{ product()?.name }}</strong>
+        <span class="text-muted"> · saldo actual {{ formatQuantity(current()) }} {{ unit()?.abbreviation }}</span>
+      </p>
+    </div>
+    <div class="field field--full">
+      <label class="label" for="mv-quantity">
+        {{ kind() === 'ajuste' ? 'Cantidad contada' : 'Cantidad' }} <span class="required">*</span>
+      </label>
+      <input id="mv-quantity" class="input" type="text" inputmode="decimal" formControlName="quantity" autocomplete="off" />
+      <span class="hint">
+        @if (unit()?.unit_type === 'Cantidad') {
+          Unidades enteras, sin decimales.
+        } @else {
+          Hasta 3 decimales.
+        }
+        @if (kind() === 'ajuste') {
+          Escribe lo que hay físicamente: el sistema calcula la diferencia.
+        }
+      </span>
+    </div>
+    <div class="field field--full">
+      <label class="label" for="mv-reason">
+        Motivo
+        @if (reasonRequired()) {
+          <span class="required">*</span>
+        }
+      </label>
+      <input id="mv-reason" class="input" type="text" formControlName="reason" maxlength="500" autocomplete="off" />
+    </div>
+  </form>
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Registrar' }}
+    </button>
+  </div>
+</app-modal>

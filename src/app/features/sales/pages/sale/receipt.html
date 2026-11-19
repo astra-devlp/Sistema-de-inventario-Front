@@ -1,0 +1,74 @@
+<article class="receipt" aria-label="Comprobante de venta">
+  <header class="receipt__head">
+    @if (issuerName(); as name) {
+      <h2 class="receipt__name">{{ name }}</h2>
+    }
+    @if (issuer()?.name && issuer()?.legal_name && issuer()?.name !== issuer()?.legal_name) {
+      <p>{{ issuer()?.name }}</p>
+    }
+    @if (issuer()?.tax_id) {
+      <p>NIT {{ issuer()?.tax_id }}</p>
+    }
+    @if (issuerPlace()) {
+      <p>{{ issuerPlace() }}</p>
+    }
+    @if (issuer()?.phone) {
+      <p>Tel. {{ issuer()?.phone }}</p>
+    }
+  </header>
+
+  <p class="receipt__doc">{{ documentLabel() }}</p>
+  <p class="receipt__code">{{ sale().receipt_code }}</p>
+  <p class="receipt__center">{{ sale().created_at | date: 'dd/MM/yyyy HH:mm' : bogota }}</p>
+  @if (voided()) {
+    <p class="receipt__void">VENTA ANULADA</p>
+  }
+  <p class="receipt__center">
+    @if (sale().customer; as customer) {
+      Cliente: {{ customer.name }}@if (customer.document) { · {{ customer.document_type }} {{ customer.document }} }
+    } @else {
+      Consumidor final
+    }
+  </p>
+
+  <hr />
+  <table class="receipt__lines">
+    <tbody>
+      @for (line of sale().lines; track line.id) {
+        <tr>
+          <td colspan="2">{{ line.product_name }}</td>
+        </tr>
+        <tr class="receipt__detail">
+          <td>{{ formatQuantity(line.quantity) }} × {{ formatCop(line.unit_price_with_tax) }}</td>
+          <td class="receipt__num">{{ formatCop(line.line_total) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <hr />
+
+  <dl class="receipt__totals">
+    <div><dt>Subtotal</dt><dd>{{ formatCop(sale().subtotal) }}</dd></div>
+    @for (tax of sale().taxes; track $index) {
+      <div class="receipt__detail">
+        <dt>{{ tax.is_exempt ? 'Exento' : 'IVA ' + formatQuantity(tax.tax_rate) + '%' }} (base {{ formatCop(tax.base) }})</dt>
+        <dd>{{ formatCop(tax.tax) }}</dd>
+      </div>
+    }
+    <div><dt>IVA</dt><dd>{{ formatCop(sale().tax_total) }}</dd></div>
+    <div class="receipt__total"><dt>TOTAL</dt><dd>{{ formatCop(sale().total) }}</dd></div>
+  </dl>
+  <hr />
+
+  <dl class="receipt__totals">
+    @for (payment of sale().payments; track payment.method) {
+      <div>
+        <dt>{{ paymentLabels[payment.method] }}@if (payment.reference) { ({{ payment.reference }}) }</dt>
+        <dd>{{ formatCop(payment.received ?? payment.amount) }}</dd>
+      </div>
+    }
+    <div><dt>Vuelto</dt><dd>{{ formatCop(sale().change_amount) }}</dd></div>
+  </dl>
+  <hr />
+  <p class="receipt__legal">{{ sale().legal_notice }}</p>
+</article>

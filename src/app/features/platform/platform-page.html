@@ -1,0 +1,32 @@
+<app-page-header
+  title="Plataforma"
+  subtitle="Operación del software: empresas y planes, unidades de medida y tarifas de IVA."
+/>
+
+<div class="platform__tabs" role="tablist" aria-label="Secciones de plataforma">
+  @for (item of tabs; track item.id) {
+    <button
+      type="button"
+      role="tab"
+      class="btn"
+      [class.btn--primary]="tab() === item.id"
+      [class.btn--outline]="tab() !== item.id"
+      [attr.aria-selected]="tab() === item.id"
+      (click)="tab.set(item.id)"
+    >
+      {{ item.label }}
+    </button>
+  }
+</div>
+
+@switch (tab()) {
+  @case ('companies') {
+    <app-companies-panel />
+  }
+  @case ('units') {
+    <app-units-panel />
+  }
+  @case ('taxes') {
+    <app-taxes-panel />
+  }
+}

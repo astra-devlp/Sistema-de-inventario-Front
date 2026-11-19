@@ -1,0 +1,280 @@
+/* —— Responsive global: móvil → tablet → portátil → escritorio —— */
+
+body {
+  min-width: 0;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.card,
+.toolbar,
+.page-header,
+.page-header__actions,
+.main,
+.content,
+.grid,
+.form-grid,
+.table-wrap,
+.modal,
+.modal__body,
+.modal-footer-actions {
+  min-width: 0;
+}
+
+/* Controles cómodos al tacto / iOS sin zoom */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn--sm {
+    min-height: 40px;
+  }
+
+  .btn--icon {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .input,
+  .select,
+  .select--auto,
+  .textarea {
+    min-height: 46px;
+    font-size: 16px;
+  }
+}
+
+/* —— Portátil / tablet ancha —— */
+@media (max-width: 1200px) {
+  .grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* —— Tablet —— */
+@media (max-width: 900px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .page-header__subtitle {
+    max-width: none;
+  }
+
+  .page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .page-header__actions .btn {
+    flex: 1 1 auto;
+    min-width: min(100%, 160px);
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .toolbar__search {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+
+  .toolbar .select,
+  .toolbar .select--auto,
+  .toolbar .w-auto,
+  .toolbar .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .pagination__buttons {
+    width: 100%;
+  }
+
+  .pagination__buttons .btn {
+    flex: 1;
+  }
+
+  .card__header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .modal,
+  .modal--sm,
+  .modal--lg {
+    width: 100%;
+    max-width: none;
+    max-height: min(92dvh, 100%);
+    border-radius: 18px 18px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+
+  .modal__header,
+  .modal__body {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .modal__footer {
+    padding: 12px max(16px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    border-radius: 0;
+  }
+
+  .modal-footer-actions .btn,
+  .modal__footer .btn {
+    flex: 1 1 auto;
+    min-width: min(100%, 140px);
+  }
+
+  .table {
+    min-width: 640px;
+  }
+
+  .table th,
+  .table td {
+    padding: 12px 14px;
+  }
+
+  .table .col-actions .btn--icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .w-auto {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .empty-state {
+    padding: 40px 16px;
+  }
+}
+
+/* —— Móvil —— */
+@media (max-width: 640px) {
+  .content {
+    padding: 14px 12px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .page-header__title {
+    font-size: clamp(1.35rem, 5vw, 1.7rem);
+  }
+
+  .page-header__actions .btn {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .grid--2,
+  .grid--3,
+  .grid--4 {
+    grid-template-columns: 1fr;
+  }
+
+  .stat {
+    padding: 14px 16px;
+  }
+
+  .stat__value {
+    font-size: clamp(1.2rem, 6vw, 1.55rem);
+    overflow-wrap: anywhere;
+  }
+
+  .card__header,
+  .card__body,
+  .toolbar,
+  .pagination {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .toolbar {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .table {
+    min-width: 540px;
+  }
+
+  .table th,
+  .table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .table th {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .table__secondary {
+    font-size: 11px;
+  }
+
+  .badge {
+    font-size: 11px;
+  }
+
+  .app-header__inner {
+    padding: 0 12px;
+  }
+
+  .topbar__dropdown {
+    right: 8px;
+    left: auto;
+    min-width: min(260px, calc(100vw - 24px));
+  }
+
+  .btn {
+    max-width: 100%;
+  }
+
+  .modal__title {
+    padding-right: 8px;
+  }
+}
+
+/* —— Sidebar móvil (coincide con layout) —— */
+@media (max-width: 860px) {
+  .content {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+}

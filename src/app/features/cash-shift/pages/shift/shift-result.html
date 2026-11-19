@@ -1,0 +1,53 @@
+<dl class="business-profile">
+  <div class="business-profile__item">
+    <dt>Base de apertura</dt>
+    <dd>{{ formatCop(shift().opening_cash) }}</dd>
+  </div>
+  <div class="business-profile__item">
+    <dt>Efectivo esperado</dt>
+    <dd>{{ formatCop(shift().expected_cash) }}</dd>
+  </div>
+  <div class="business-profile__item">
+    <dt>Efectivo contado</dt>
+    <dd>{{ formatCop(shift().counted_cash) }}</dd>
+  </div>
+  <div class="business-profile__item">
+    <dt>Diferencia</dt>
+    <dd>
+      @if (difference(); as diff) {
+        <span
+          class="badge"
+          [class.badge--success]="diff.kind === 'exacto'"
+          [class.badge--warning]="diff.kind === 'sobrante'"
+          [class.badge--danger]="diff.kind === 'faltante'"
+        >
+          {{ diff.label }}
+        </span>
+        {{ diff.kind === 'exacto' ? '' : diff.signed }}
+      } @else {
+        —
+      }
+    </dd>
+  </div>
+  @if (shift().closed_at) {
+    <div class="business-profile__item">
+      <dt>Cerrado</dt>
+      <dd>{{ shift().closed_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
+    </div>
+  }
+  @if (shift().forced_close) {
+    <div class="business-profile__item">
+      <dt>Tipo de cierre</dt>
+      <dd><span class="badge badge--warning">Cierre forzado</span></dd>
+    </div>
+  }
+  @if (shift().note) {
+    <div class="business-profile__item business-profile__item--full">
+      <dt>Nota</dt>
+      <dd>{{ shift().note }}</dd>
+    </div>
+  }
+</dl>
+@if (negativeNote(); as note) {
+  <p class="hint">{{ note }}</p>
+}

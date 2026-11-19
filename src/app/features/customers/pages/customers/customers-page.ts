@@ -22,7 +22,7 @@ export class CustomersPage {
   protected readonly documentTypeGroups = computed(() => groupDocumentTypes(this.documentTypes()));
   protected readonly query = signal('');
   protected readonly documentType = signal('');
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<CustomerModal>(null);
   protected readonly selected = signal<Customer | null>(null);

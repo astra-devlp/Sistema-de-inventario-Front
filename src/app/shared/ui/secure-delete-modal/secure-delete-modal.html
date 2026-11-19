@@ -1,0 +1,71 @@
+@if (step() === 1) {
+  <app-modal [open]="open()" [title]="title()" size="sm" (closed)="cancel()">
+    <div class="confirm">
+      <p>{{ message() }}</p>
+      <p class="hint">Esta acción no se puede deshacer.</p>
+
+      <label class="check" style="margin-top: 12px; text-align: left">
+        <input
+          type="checkbox"
+          [checked]="acknowledged()"
+          (change)="onAckChange($any($event.target).checked)"
+        />
+        Confirmo que quiero eliminar esta {{ entityLabel() }}.
+      </label>
+
+      @if (acknowledged()) {
+        <div class="secure-delete__timer" style="margin-top: 12px">
+          <span class="secure-delete__timer-label">
+            {{ waitDone ? 'Listo para continuar' : 'Espera para habilitar' }}
+          </span>
+          @if (!waitDone) {
+            <span class="secure-delete__timer-value">{{ countdownLabel }}s</span>
+          }
+        </div>
+      }
+    </div>
+
+    <div modal-footer>
+      <button type="button" class="btn btn--outline" (click)="cancel()">Cancelar</button>
+      <button type="button" class="btn btn--danger" [disabled]="!canContinue" (click)="goToEmailStep()">
+        Eliminar
+      </button>
+    </div>
+  </app-modal>
+} @else {
+  <app-modal [open]="open()" title="Confirma el correo" size="sm" (closed)="cancel()">
+    <div class="stack">
+      <p class="text-muted">
+        Escribe el correo <strong>{{ email() }}</strong> para confirmar la eliminación.
+        No puedes pegarlo: debes escribirlo.
+      </p>
+
+      <div class="field">
+        <label class="label" for="secure-delete-email">Correo</label>
+        <input
+          id="secure-delete-email"
+          class="input"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="typedEmail()"
+          (input)="typedEmail.set($any($event.target).value)"
+          (paste)="blockPaste($event)"
+          (drop)="blockDrop($event)"
+        />
+      </div>
+    </div>
+
+    <div modal-footer>
+      <button type="button" class="btn btn--outline" (click)="cancel()">Cancelar</button>
+      <button
+        type="button"
+        class="btn btn--danger"
+        [disabled]="!canDelete"
+        (click)="confirmDelete()"
+      >
+        {{ submitting() ? 'Eliminando…' : 'Eliminar' }}
+      </button>
+    </div>
+  </app-modal>
+}

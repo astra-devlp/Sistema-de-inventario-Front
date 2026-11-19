@@ -1,0 +1,39 @@
+<app-modal [open]="open()" title="Datos de la empresa" size="md" (closed)="closed.emit()">
+  <form class="form-grid" autocomplete="off" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    @if (error()) {
+      <p class="auth-error field--full" role="alert">{{ error() }}</p>
+    }
+    <div class="field field--full">
+      <label class="label" for="ce-name">Nombre comercial <span class="required">*</span></label>
+      <input id="ce-name" class="input" type="text" maxlength="200" formControlName="name" />
+    </div>
+    <div class="field">
+      <label class="label" for="ce-legal">Razón social</label>
+      <input id="ce-legal" class="input" type="text" maxlength="200" formControlName="legal_name" />
+    </div>
+    <div class="field">
+      <label class="label" for="ce-nit">NIT</label>
+      <input id="ce-nit" class="input" type="text" maxlength="30" placeholder="900.123.456-7" formControlName="tax_id" />
+      <p class="hint">Se guarda sin puntos ni espacios: 900.123.456-7 queda 900123456-7.</p>
+    </div>
+    <div class="field">
+      <label class="label" for="ce-phone">Teléfono</label>
+      <input id="ce-phone" class="input" type="text" maxlength="50" formControlName="phone" />
+    </div>
+    <div class="field">
+      <label class="label" for="ce-city">Ciudad</label>
+      <input id="ce-city" class="input" type="text" maxlength="100" formControlName="city" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="ce-address">Dirección</label>
+      <input id="ce-address" class="input" type="text" maxlength="250" formControlName="address" />
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>

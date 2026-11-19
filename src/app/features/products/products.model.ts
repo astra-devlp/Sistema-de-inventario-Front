@@ -1,3 +1,5 @@
+import type { UnitType } from './catalog.model';
+
 export interface Product {
   id: number;
   name: string;
@@ -58,6 +60,7 @@ export interface UnitRef {
   id: number;
   name: string;
   abbreviation: string;
+  unit_type: UnitType;
 }
 
 export interface PresentationRef {

@@ -1,0 +1,32 @@
+<app-modal [open]="open()" [title]="'Renovar plan' + (company() ? ' · ' + company()!.name : '')" size="sm" (closed)="closed.emit()">
+  <form class="stack" autocomplete="off" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+    <p class="hint">Plan actual: {{ current() }}.</p>
+    @if (error()) {
+      <p class="auth-error" role="alert">{{ error() }}</p>
+    }
+    <div class="field">
+      <label class="label" for="pm-plan">Plan</label>
+      <select id="pm-plan" class="select" formControlName="plan">
+        <option value="">Sin plan</option>
+        @for (plan of plans; track plan.value) {
+          <option [value]="plan.value">{{ plan.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="pm-expires">Vencimiento</label>
+      <input id="pm-expires" class="input" type="date" formControlName="expires_on" />
+    </div>
+    <p class="hint">
+      {{ planNote }} Plan y vencimiento van juntos: déjalos los dos vacíos para que la empresa no venza nunca.
+    </p>
+    <button type="button" class="btn btn--outline" (click)="clear()">Dejar sin vencimiento</button>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar plan' }}
+    </button>
+  </div>
+</app-modal>

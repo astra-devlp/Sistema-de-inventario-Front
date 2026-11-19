@@ -1,0 +1,25 @@
+<app-modal [open]="open()" title="Anular venta" size="md" (closed)="dismiss()">
+  <p>
+    Vas a anular la venta <strong>{{ sale().receipt_code }}</strong>. El stock vuelve a la sede y el comprobante queda
+    marcado como ANULADO.
+  </p>
+  @if (error()) {
+    <p class="auth-error" role="alert">{{ error() }}</p>
+  }
+  <div class="field">
+    <label class="label" for="vm-reason">Motivo <span class="required">*</span></label>
+    <textarea id="vm-reason" class="textarea" rows="3" [maxlength]="maxReason" autocomplete="off"
+      [ngModel]="reason()" (ngModelChange)="reason.set($event)"></textarea>
+    <span class="hint">Entre 5 y {{ maxReason }} caracteres ({{ reasonLength() }} escritos).</span>
+  </div>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" [disabled]="busy()" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--danger" [disabled]="!reasonValid() || busy()" (click)="confirm()">
+      {{ busy() ? 'Anulando…' : 'Anular venta' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-auth-dialog [open]="open() && dialogOpen()" [who]="who()" [error]="dialogError()" [busy]="busy()" [lockedUntil]="lockedUntil()"
+  (submitted)="authorize($event)" (closed)="dialogOpen.set(false)" />

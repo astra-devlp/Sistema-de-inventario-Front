@@ -1,0 +1,514 @@
+<section class="cfg">
+  <header class="cfg-hero">
+    <div class="cfg-hero__copy">
+      <p class="cfg-hero__eyebrow">Configuración</p>
+      <h1 class="cfg-hero__title">Centro de operación</h1>
+      <p class="cfg-hero__lead">
+        Solo de este negocio. Empieza con la plantilla y ajústala a tu local: dispositivos, tickets y
+        DIAN en un solo lugar.
+      </p>
+    </div>
+    <div class="cfg-hero__stats" aria-label="Estado del equipo">
+      <div class="cfg-stat">
+        <span class="cfg-stat__value">{{ connectedCount() }}</span>
+        <span class="cfg-stat__label">conectados</span>
+      </div>
+      <div class="cfg-stat">
+        <span class="cfg-stat__value">{{ rows.length }}</span>
+        <span class="cfg-stat__label">canales</span>
+      </div>
+    </div>
+  </header>
+
+  @if (saved()) {
+    <p class="cfg-toast" role="status">{{ saved() }}</p>
+  }
+
+  <div class="cfg-layout">
+    <aside class="cfg-side">
+      <div class="cfg-panel cfg-panel--side">
+        <div class="cfg-panel__head">
+          <h2 class="cfg-panel__title">Preferencias</h2>
+          <p class="cfg-panel__sub">Avisos de este dispositivo. El tema se cambia en la barra superior.</p>
+        </div>
+
+        <div class="cfg-panel__body cfg-prefs">
+          @if (isCompanyAdmin()) {
+            <div class="cfg-callout">
+              <p class="cfg-callout__title">Datos del local</p>
+              <p class="cfg-callout__text">
+                Nombre, NIT, teléfono, dirección y ciudad se editan en
+                <a routerLink="/cuenta">Mi cuenta</a>.
+              </p>
+            </div>
+          } @else {
+            <div class="field">
+              <label class="label" for="cfg-company">Nombre del negocio</label>
+              <input id="cfg-company" class="input" type="text" [(ngModel)]="companyName" />
+            </div>
+          }
+
+          <label class="cfg-toggle">
+            <span class="cfg-toggle__copy">
+              <span class="cfg-toggle__title">Alertas de stock bajo</span>
+              <span class="cfg-toggle__hint">Marca productos bajo el mínimo.</span>
+            </span>
+            <input type="checkbox" [(ngModel)]="lowStockAlerts" />
+          </label>
+        </div>
+
+        <div class="cfg-panel__foot">
+          <button type="button" class="btn btn--primary btn--block" (click)="saveGeneral()">
+            Guardar preferencias
+          </button>
+        </div>
+      </div>
+
+      @if (isCompanyAdmin()) {
+        <div class="cfg-panel cfg-panel--side">
+          <div class="cfg-panel__head">
+            <h2 class="cfg-panel__title">IVA por defecto</h2>
+            <p class="cfg-panel__sub">
+              Se propone en los productos nuevos de tu empresa. Las tarifas las define la plataforma.
+            </p>
+          </div>
+          <div class="cfg-panel__body">
+            @if (taxError()) {
+              <p class="auth-error" role="alert">{{ taxError() }}</p>
+            }
+            @if (taxMessage()) {
+              <p class="cfg-toast" role="status">{{ taxMessage() }}</p>
+            }
+            <div class="field">
+              <label class="label" for="cfg-default-tax">Tarifa</label>
+              <select id="cfg-default-tax" class="select" (change)="onDefaultTax($event)">
+                <option value="" [selected]="defaultTaxId() === null">Sin elegir</option>
+                @for (tax of taxes(); track tax.id) {
+                  <option [value]="tax.id" [selected]="tax.id === defaultTaxId()">{{ taxLabel(tax) }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="cfg-panel__foot">
+            <button type="button" class="btn btn--primary btn--block" [disabled]="defaultTaxId() === null || savingTax()" (click)="saveDefaultTax()">
+              {{ savingTax() ? 'Guardando…' : 'Guardar IVA por defecto' }}
+            </button>
+          </div>
+        </div>
+      }
+    </aside>
+
+    <div class="cfg-main">
+      <div class="cfg-panel">
+        <div class="cfg-panel__head cfg-panel__head--row">
+          <div>
+            <h2 class="cfg-panel__title">Dispositivos y facturación</h2>
+            <p class="cfg-panel__sub">Elige un canal, conéctalo y configura si aplica.</p>
+          </div>
+        </div>
+
+        <div class="cfg-tiles">
+          @for (row of rows; track row.id) {
+            <article
+              class="cfg-tile"
+              [class.is-on]="device(row.id).connected"
+              [class.is-open]="row.panel && openPanel() === row.panel"
+              [attr.data-tone]="row.id"
+            >
+              <div class="cfg-tile__top">
+                <span class="cfg-tile__icon" aria-hidden="true">
+                  <app-icon [name]="row.icon" />
+                </span>
+                <span
+                  class="cfg-tile__pulse"
+                  [class.is-live]="device(row.id).connected"
+                  aria-hidden="true"
+                ></span>
+              </div>
+
+              <h3 class="cfg-tile__title">{{ row.title }}</h3>
+              <p class="cfg-tile__endpoint">
+                {{ device(row.id).endpoint || row.detail }}
+              </p>
+              <p class="cfg-tile__status">
+                {{ statusLabel(row.id) }}
+              </p>
+
+              <div class="cfg-tile__actions">
+                <button
+                  type="button"
+                  class="btn btn--sm"
+                  [class.btn--primary]="!device(row.id).connected"
+                  [class.btn--outline]="device(row.id).connected"
+                  (click)="toggleConnect(row.id)"
+                >
+                  {{ device(row.id).connected ? 'Desconectar' : 'Conectar' }}
+                </button>
+                @if (row.panel) {
+                  <button
+                    type="button"
+                    class="btn btn--ghost btn--sm"
+                    (click)="configure(row.panel)"
+                  >
+                    {{ row.id === 'printer' ? 'Ticket' : 'Ajustes' }}
+                  </button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+
+      @if (openPanel() === 'printer') {
+        <div class="cfg-panel cfg-panel--detail" id="cfg-printer-panel">
+          <div class="cfg-panel__head cfg-panel__head--row">
+            <div>
+              <p class="cfg-panel__eyebrow">Ticket</p>
+              <h2 class="cfg-panel__title">Datos del local y factura</h2>
+              <p class="cfg-panel__sub">
+                Este nombre y estos datos salen en cada factura de venta: productos, precios e IMEI
+                de celulares.
+              </p>
+            </div>
+            <button type="button" class="btn btn--ghost btn--icon" (click)="configure(null)" aria-label="Cerrar">
+              <app-icon name="x" />
+            </button>
+          </div>
+
+          <div class="cfg-panel__body">
+            @if (testMessage()) {
+              <p class="cfg-inline-note">{{ testMessage() }}</p>
+            }
+
+            <dl class="business-profile cfg-business">
+              <div class="business-profile__item business-profile__item--full">
+                <dt>Nombre del local o empresa</dt>
+                <dd>{{ business().name }}</dd>
+              </div>
+              <div class="business-profile__item">
+                <dt>NIT</dt>
+                <dd>{{ business().nit }}</dd>
+              </div>
+              <div class="business-profile__item">
+                <dt>Teléfono</dt>
+                <dd>{{ business().phone }}</dd>
+              </div>
+              <div class="business-profile__item">
+                <dt>Dirección</dt>
+                <dd>{{ business().address }}</dd>
+              </div>
+              <div class="business-profile__item">
+                <dt>Ciudad</dt>
+                <dd>{{ business().city }}</dd>
+              </div>
+            </dl>
+            <p class="hint cfg-business__note">
+              @if (isCompanyAdmin()) {
+                Estos datos viven en
+                <a routerLink="/cuenta">Mi cuenta</a>
+                y puedes editarlos allí.
+              } @else if (isStaff()) {
+                Solo lectura: los define el Administrador de la empresa.
+              } @else {
+                Los datos del local los define cada cuenta en Mi cuenta.
+              }
+            </p>
+
+            <div class="form-grid account-grid cfg-ticket-fields">
+              <div class="field field--full">
+                <label class="label" for="cfg-ticket-header">Texto extra del encabezado</label>
+                <textarea
+                  id="cfg-ticket-header"
+                  class="textarea"
+                  rows="2"
+                  [ngModel]="ticket().headerExtra"
+                  (ngModelChange)="patchTicket({ headerExtra: $event })"
+                  [disabled]="!canEditTicket()"
+                  placeholder="Resolución DIAN u otras líneas opcionales"
+                ></textarea>
+              </div>
+
+              <div class="field field--full">
+                <label class="label" for="cfg-ticket-footer">Pie de página</label>
+                <input
+                  id="cfg-ticket-footer"
+                  class="input"
+                  type="text"
+                  [ngModel]="ticket().footer"
+                  (ngModelChange)="patchTicket({ footer: $event })"
+                  [disabled]="!canEditTicket()"
+                  placeholder="¡Gracias por su compra!"
+                />
+              </div>
+
+              <div class="field field--full">
+                <p class="label">Tamaño de letra al imprimir</p>
+                <div class="cfg-segment cfg-segment--3" role="group" aria-label="Tamaño de letra">
+                  <button
+                    type="button"
+                    class="cfg-segment__btn"
+                    [class.is-active]="ticket().fontSize === 'small'"
+                    [disabled]="!canEditTicket()"
+                    (click)="patchTicket({ fontSize: 'small' })"
+                  >
+                    Pequeña
+                  </button>
+                  <button
+                    type="button"
+                    class="cfg-segment__btn"
+                    [class.is-active]="ticket().fontSize === 'normal'"
+                    [disabled]="!canEditTicket()"
+                    (click)="patchTicket({ fontSize: 'normal' })"
+                  >
+                    Normal
+                  </button>
+                  <button
+                    type="button"
+                    class="cfg-segment__btn"
+                    [class.is-active]="ticket().fontSize === 'large'"
+                    [disabled]="!canEditTicket()"
+                    (click)="patchTicket({ fontSize: 'large' })"
+                  >
+                    Grande
+                  </button>
+                </div>
+              </div>
+
+              <label class="cfg-toggle field--full">
+                <span class="cfg-toggle__copy">
+                  <span class="cfg-toggle__title">Mostrar fecha/hora de la venta</span>
+                </span>
+                <input
+                  type="checkbox"
+                  [ngModel]="ticket().showDateTime"
+                  (ngModelChange)="patchTicket({ showDateTime: $event })"
+                  [disabled]="!canEditTicket()"
+                />
+              </label>
+              <label class="cfg-toggle field--full">
+                <span class="cfg-toggle__copy">
+                  <span class="cfg-toggle__title">Mostrar cliente</span>
+                </span>
+                <input
+                  type="checkbox"
+                  [ngModel]="ticket().showCustomer"
+                  (ngModelChange)="patchTicket({ showCustomer: $event })"
+                  [disabled]="!canEditTicket()"
+                />
+              </label>
+              <label class="cfg-toggle field--full">
+                <span class="cfg-toggle__copy">
+                  <span class="cfg-toggle__title">Mostrar método de pago</span>
+                </span>
+                <input
+                  type="checkbox"
+                  [ngModel]="ticket().showPaymentMethod"
+                  (ngModelChange)="patchTicket({ showPaymentMethod: $event })"
+                  [disabled]="!canEditTicket()"
+                />
+              </label>
+              <label class="cfg-toggle field--full">
+                <span class="cfg-toggle__copy">
+                  <span class="cfg-toggle__title">Mostrar cambio</span>
+                </span>
+                <input
+                  type="checkbox"
+                  [ngModel]="ticket().showChange"
+                  (ngModelChange)="patchTicket({ showChange: $event })"
+                  [disabled]="!canEditTicket()"
+                />
+              </label>
+              <label class="cfg-toggle field--full">
+                <span class="cfg-toggle__copy">
+                  <span class="cfg-toggle__title">Mostrar etiqueta REIMPRESIÓN</span>
+                </span>
+                <input
+                  type="checkbox"
+                  [ngModel]="ticket().showReprintLabel"
+                  (ngModelChange)="patchTicket({ showReprintLabel: $event })"
+                  [disabled]="!canEditTicket()"
+                />
+              </label>
+
+              <p class="hint field--full">
+                La fecha de la esquina superior es del navegador. Al imprimir usamos márgenes en cero
+                para ocultarla; si sigue visible, desactiva “Encabezados y pies de página” en el
+                diálogo de impresión.
+              </p>
+
+              <div class="field">
+                <label class="label" for="cfg-printer-ip">IP / Host impresora</label>
+                <input
+                  id="cfg-printer-ip"
+                  class="input"
+                  type="text"
+                  [ngModel]="devices().printer.endpoint"
+                  (ngModelChange)="patchPrinter({ endpoint: $event })"
+                  [disabled]="!canEditTicket()"
+                  placeholder="192.168.1.50"
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="cfg-printer-port">Puerto TCP</label>
+                <input
+                  id="cfg-printer-port"
+                  class="input"
+                  type="text"
+                  [ngModel]="devices().printer.tcpPort"
+                  (ngModelChange)="patchPrinter({ tcpPort: $event })"
+                  [disabled]="!canEditTicket()"
+                  placeholder="9100"
+                />
+              </div>
+              <div class="field field--full">
+                <p class="label">Ancho de papel</p>
+                <div class="cfg-segment" role="group" aria-label="Ancho de papel">
+                  <button
+                    type="button"
+                    class="cfg-segment__btn"
+                    [class.is-active]="devices().printer.paperWidth === '58mm'"
+                    [disabled]="!canEditTicket()"
+                    (click)="patchPrinter({ paperWidth: '58mm' })"
+                  >
+                    58mm
+                  </button>
+                  <button
+                    type="button"
+                    class="cfg-segment__btn"
+                    [class.is-active]="devices().printer.paperWidth === '80mm'"
+                    [disabled]="!canEditTicket()"
+                    (click)="patchPrinter({ paperWidth: '80mm' })"
+                  >
+                    80mm
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            @if (showPreview()) {
+              <aside class="cfg-ticket-preview" [attr.data-size]="ticket().fontSize" aria-label="Vista previa del ticket">
+                @if (ticket().showReprintLabel) {
+                  <p class="cfg-ticket-preview__reprint">REIMPRESIÓN</p>
+                }
+                <p class="cfg-ticket-preview__name">{{ business().name }}</p>
+                <p>NIT {{ business().nit }}</p>
+                <p>{{ business().address }}</p>
+                <p>{{ business().city }} · {{ business().phone }}</p>
+                @if (ticket().headerExtra.trim()) {
+                  <p class="cfg-ticket-preview__extra">{{ ticket().headerExtra }}</p>
+                }
+                <hr />
+                @if (ticket().showDateTime) {
+                  <p>Fecha: 17/11/2026 22:00</p>
+                }
+                @if (ticket().showCustomer) {
+                  <p>Cliente: Público general</p>
+                }
+                <p>Celular Demo · IMEI 35… · $450.000</p>
+                <hr />
+                <p><strong>Total $450.000</strong></p>
+                @if (ticket().showPaymentMethod) {
+                  <p>Pago: Efectivo</p>
+                }
+                @if (ticket().showChange) {
+                  <p>Cambio: $50.000</p>
+                }
+                <p class="cfg-ticket-preview__footer">{{ ticket().footer || '—' }}</p>
+              </aside>
+            }
+          </div>
+
+          <div class="cfg-panel__foot cfg-panel__foot--split">
+            <div class="cfg-panel__foot-left">
+              <button type="button" class="btn btn--outline" (click)="togglePreview()">
+                {{ showPreview() ? 'Ocultar vista previa' : 'Vista previa' }}
+              </button>
+              <button type="button" class="btn btn--ghost" (click)="printTest()">Imprimir prueba</button>
+            </div>
+            @if (canEditTicket()) {
+              <button type="button" class="btn btn--primary" (click)="saveTicketTemplate()">
+                Guardar plantilla
+              </button>
+            } @else {
+              <button type="button" class="btn btn--outline" (click)="configure(null)">Cerrar</button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (openPanel() === 'dian') {
+        <div class="cfg-panel cfg-panel--detail cfg-panel--dian" id="cfg-dian-panel">
+          <div class="cfg-panel__head cfg-panel__head--row">
+            <div>
+              <p class="cfg-panel__eyebrow">DIAN</p>
+              <h2 class="cfg-panel__title">Facturación electrónica</h2>
+              <p class="cfg-panel__sub">Software propio: NIT, ID, PIN y ambiente.</p>
+            </div>
+            <div class="cfg-panel__head-actions">
+              <span
+                class="cfg-chip"
+                [class.is-on]="devices().dian.connected"
+              >
+                {{ devices().dian.connected ? 'Conectada' : 'Desconectada' }}
+              </span>
+              <button type="button" class="btn btn--ghost btn--sm" (click)="configure(null)">
+                Cerrar
+              </button>
+            </div>
+          </div>
+
+          <div class="cfg-panel__body form-grid account-grid">
+            <div class="field">
+              <label class="label" for="cfg-dian-nit">NIT empresa</label>
+              <input
+                id="cfg-dian-nit"
+                class="input"
+                type="text"
+                [ngModel]="devices().dian.nit"
+                (ngModelChange)="patchDian({ nit: $event })"
+                placeholder="900.123.456-1"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="cfg-dian-soft">Software ID</label>
+              <input
+                id="cfg-dian-soft"
+                class="input"
+                type="text"
+                [ngModel]="devices().dian.softwareId"
+                (ngModelChange)="patchDian({ softwareId: $event })"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="cfg-dian-pin">PIN de software</label>
+              <input
+                id="cfg-dian-pin"
+                class="input"
+                type="password"
+                [ngModel]="devices().dian.softwarePin"
+                (ngModelChange)="patchDian({ softwarePin: $event })"
+                autocomplete="off"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="cfg-dian-env">Ambiente</label>
+              <select
+                id="cfg-dian-env"
+                class="select"
+                [ngModel]="devices().dian.environment"
+                (ngModelChange)="patchDian({ environment: $event })"
+              >
+                <option value="habilitacion">Habilitación / Pruebas</option>
+                <option value="produccion">Producción</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cfg-panel__foot">
+            <button type="button" class="btn btn--primary" (click)="saveDian()">Guardar DIAN</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

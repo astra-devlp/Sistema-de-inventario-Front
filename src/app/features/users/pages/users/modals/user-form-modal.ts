@@ -1,6 +1,6 @@
 import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthUser, UserRole } from '@core/auth/auth.model';
+import { AuthUser, COMPANY_ROLES, UserRole, roleLabel } from '@core/auth/auth.model';
 import { httpErrorMessage } from '@core/auth/auth.service';
 import { Modal } from '@shared/ui/modal/modal';
 import { UserPayload, UsersApi } from '../../../users.api';
@@ -17,20 +17,29 @@ export class UserFormModal {
   readonly user = input<AuthUser | null>(null);
   readonly closed = output<void>();
   readonly saved = output<void>();
+  /** Pedir eliminar desde el modal de edición. */
+  readonly deleteRequested = output<void>();
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly roles: UserRole[] = ['Administrador', 'Usuario'];
+  protected readonly roles = COMPANY_ROLES;
+  protected readonly roleLabel = roleLabel;
 
   protected readonly form = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     password: new FormControl('', { nonNullable: true }),
     role: new FormControl<UserRole>('Usuario', { nonNullable: true }),
-    // Igual que la API: separadores opcionales y entre 9 y 10 dígitos.
-    phone: new FormControl('', { nonNullable: true, validators: [Validators.pattern(/^\s*(?:[\s.\-()]*\d){9,10}[\s.\-()]*$/)] }),
+    phone: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.pattern(/^\s*(?:(?:[\s.\-()]*\d){9,10}[\s.\-()]*)?$/)],
+    }),
     is_active: new FormControl(true, { nonNullable: true }),
   });
+
+  protected get title(): string {
+    return this.user() ? 'Editar usuario' : 'Nuevo usuario';
+  }
 
   constructor() {
     effect(() => {
@@ -60,11 +69,8 @@ export class UserFormModal {
     }
     const raw = this.form.getRawValue();
     const editing = this.user();
-    if (!editing && raw.password.trim().length < 8) {
-      this.error.set('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    if (editing && raw.password.trim() && raw.password.trim().length < 8) {
+    const password = raw.password.trim();
+    if ((!editing || password) && password.length < 8) {
       this.error.set('La contraseña debe tener al menos 8 caracteres');
       return;
     }
@@ -74,9 +80,9 @@ export class UserFormModal {
       email: raw.email.trim(),
       role: raw.role,
       phone: raw.phone.trim() || null,
-      is_active: raw.is_active,
     };
-    if (raw.password.trim()) payload.password = raw.password;
+    if (password) payload.password = raw.password;
+    if (editing) payload.is_active = raw.is_active;
 
     this.submitting.set(true);
     this.error.set(null);
@@ -88,7 +94,7 @@ export class UserFormModal {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(httpErrorMessage(err, 'No se pudo guardar el usuario'));
+        this.error.set(httpErrorMessage(err, 'No se pudo guardar'));
       },
     });
   }

@@ -1,0 +1,103 @@
+<app-modal [open]="open()" title="Devolver" size="lg" (closed)="dismiss()">
+  <p class="hint">
+    Venta <strong>{{ sale().receipt_code }}</strong>. Devuelves con el precio y el IVA guardados en el comprobante. Necesitas un
+    turno propio abierto en una caja de la sede de la venta.
+  </p>
+  @if (plan().notice) {
+    <p class="hint hint--warning" role="status">{{ plan().notice }}</p>
+  }
+  @if (error()) {
+    <p class="auth-error" role="alert">
+      {{ error() }}
+      @if (goToShift()) {
+        <button type="button" class="btn btn--outline btn--sm" (click)="openShift()">Ir a Turno</button>
+      }
+    </p>
+  }
+
+  <div class="table-wrap">
+    <table class="table return__table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Vendido</th>
+          <th>Ya devuelto</th>
+          <th>Devolver</th>
+          <th>Destino</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of sale().lines; track line.id) {
+          <tr [class.row--error]="rowChecks().get(line.id)?.error || rowServerErrors().has(line.id)">
+            <td>
+              {{ line.product_name }}
+              @if (rowChecks().get(line.id)?.error; as e) {
+                <small class="field-error" role="alert">{{ e }}</small>
+              }
+              @if (rowServerErrors().get(line.id); as e) {
+                <small class="field-error" role="alert">{{ e }}</small>
+              }
+            </td>
+            <td>{{ formatQuantity(line.quantity) }}</td>
+            <td>{{ formatQuantity(line.returned_quantity) }}</td>
+            <td>
+              <input class="input sale__qty" type="text" inputmode="decimal" autocomplete="off"
+                [attr.aria-label]="'Cantidad a devolver de ' + line.product_name" placeholder="0"
+                [value]="rowOf(line).quantity" (input)="setQuantity(line, $any($event.target).value)" />
+              <button type="button" class="btn btn--ghost btn--sm" [disabled]="available(line) === '0'" (click)="fillAll(line)">
+                Todo ({{ formatQuantity(available(line)) }})
+              </button>
+            </td>
+            <td>
+              <select class="select" [attr.aria-label]="'Destino de ' + line.product_name" [ngModel]="restockChoice(line)"
+                (ngModelChange)="setRestock(line, $event)">
+                <option value="">Elige…</option>
+                <option value="si">Vuelve al stock</option>
+                <option value="no">Dañado (merma)</option>
+              </select>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="charge__total">
+    <span>Valor de la devolución (vista previa)</span>
+    <strong>{{ formatCop(total()) }}</strong>
+  </p>
+
+  <section>
+    <h3 class="charge__subtitle">Reembolso por medio de pago</h3>
+    <div class="form-grid">
+      @for (payment of sale().payments; track payment.method) {
+        <div class="field">
+          <label class="label" [for]="'rf-' + payment.method">{{ labels[payment.method] }}</label>
+          <input [id]="'rf-' + payment.method" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$ 0"
+            [value]="displayRefund(payment.method)" (input)="typeRefund(payment.method, $event)" />
+          <span class="hint">Máximo {{ formatCop(caps().get(payment.method)) }}</span>
+        </div>
+      }
+    </div>
+    @if (total() !== '0.00' && !refundCheck().ok) {
+      <p class="hint hint--warning" role="status">{{ $any(refundCheck()).error }}</p>
+    }
+  </section>
+
+  <div class="field">
+    <label class="label" for="rm-reason">Motivo <span class="required">*</span></label>
+    <textarea id="rm-reason" class="textarea" rows="2" [maxlength]="maxReason" autocomplete="off"
+      [ngModel]="reason()" (ngModelChange)="reason.set($event)"></textarea>
+    <span class="hint">Entre 5 y {{ maxReason }} caracteres ({{ reasonLength() }} escritos).</span>
+  </div>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" [disabled]="busy()" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="!canSubmit()" (click)="submit()">
+      {{ busy() ? 'Registrando…' : 'Registrar devolución' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-auth-dialog [open]="open() && dialogOpen()" [who]="who()" [notice]="plan().notice" [error]="dialogError()" [busy]="busy()"
+  [lockedUntil]="lockedUntil()" (submitted)="authorize($event)" (closed)="dialogOpen.set(false)" />

@@ -1,7 +1,12 @@
-<app-page-header title="Usuarios" subtitle="Crea cuentas y administra quién puede entrar al inventario.">
+<app-page-header
+  title="Usuarios"
+  subtitle="Personal de tu empresa: Administradores, Supervisores y Cajeros."
+>
   <div actions>
-    @if (auth.isAdmin()) {
-      <button type="button" class="btn btn--primary" (click)="open('create')"><app-icon name="plus" /> Nuevo usuario</button>
+    @if (auth.canManageStaff()) {
+      <button type="button" class="btn btn--primary" (click)="open('create')">
+        <app-icon name="plus" /> Nuevo usuario
+      </button>
     }
   </div>
 </app-page-header>
@@ -10,12 +15,25 @@
   <div class="toolbar">
     <div class="toolbar__search">
       <app-icon name="search" />
-      <input class="input" type="search" placeholder="Buscar por nombre" [value]="query()" (input)="onSearch($event)" />
+      <input
+        class="input"
+        type="search"
+        placeholder="Buscar por nombre"
+        [value]="query()"
+        (input)="onSearch($event)"
+      />
     </div>
   </div>
 
   @if (error()) {
-    <p class="auth-error" style="margin: 16px">{{ error() }}</p>
+    <p class="auth-error" style="margin: 16px">
+      {{ error() }}
+      @if (offer()) {
+        <button type="button" class="btn btn--outline" style="margin-left: 12px" (click)="deactivate()">
+          Desactivar
+        </button>
+      }
+    </p>
   }
 
   <div class="table-wrap">
@@ -27,7 +45,7 @@
           <th>Rol</th>
           <th>Teléfono</th>
           <th>Estado</th>
-          @if (auth.isAdmin()) {
+          @if (auth.canManageStaff()) {
             <th class="col-actions">Acciones</th>
           }
         </tr>
@@ -37,25 +55,35 @@
           <tr>
             <td>{{ user.name }}</td>
             <td>{{ user.email }}</td>
-            <td><span class="badge badge--primary">{{ user.role }}</span></td>
+            <td><span class="badge badge--primary">{{ roleLabel(user.role) }}</span></td>
             <td class="text-muted">{{ user.phone || '—' }}</td>
             <td>
-              <span class="badge" [class.badge--success]="user.is_active" [class.badge--danger]="!user.is_active">
+              <span
+                class="badge"
+                [class.badge--success]="user.is_active"
+                [class.badge--danger]="!user.is_active"
+              >
                 {{ user.is_active ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
-            @if (auth.isAdmin()) {
+            @if (auth.canManageStaff()) {
               <td class="col-actions">
-                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', user)"><app-icon name="edit" /></button>
-                <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', user)"><app-icon name="trash" /></button>
+                <button type="button" class="btn btn--icon" aria-label="Sedes" title="Sedes" (click)="open('locations', user)">
+                  <app-icon name="warehouse" />
+                </button>
+                <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', user)">
+                  <app-icon name="edit" />
+                </button>
               </td>
             }
           </tr>
         } @empty {
           <tr>
-            <td [attr.colspan]="auth.isAdmin() ? 6 : 5">
+            <td [attr.colspan]="auth.canManageStaff() ? 6 : 5">
               <div class="empty-state">
-                <p class="empty-state__title">{{ loading() ? 'Cargando usuarios…' : 'No hay usuarios' }}</p>
+                <p class="empty-state__title">
+                  {{ loading() ? 'Cargando usuarios…' : 'No hay usuarios' }}
+                </p>
               </div>
             </td>
           </tr>
@@ -70,11 +98,20 @@
   [user]="modal() === 'edit' ? selected() : null"
   (closed)="close()"
   (saved)="saved()"
+  (deleteRequested)="open('delete', selected())"
 />
-<app-confirm-modal
+<app-user-locations-modal
+  [open]="modal() === 'locations'"
+  [user]="selected()"
+  (closed)="close()"
+  (saved)="close()"
+/>
+<app-secure-delete-modal
   [open]="modal() === 'delete'"
+  [email]="selected()?.email || ''"
   title="Eliminar usuario"
   message="¿Deseas eliminar este usuario?"
+  entityLabel="usuario"
   (closed)="close()"
   (confirmed)="remove()"
 />

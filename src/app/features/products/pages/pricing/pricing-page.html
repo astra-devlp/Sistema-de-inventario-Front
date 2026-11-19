@@ -1,6 +1,5 @@
-<app-page-header title="Precios e IVA" subtitle="Configura listas de precios y tarifas de impuestos.">
+<app-page-header title="Precios e IVA" subtitle="Configura listas de precios y consulta las tarifas de impuestos.">
   <div actions>
-    <button type="button" class="btn btn--outline" (click)="editTax(null)"><app-icon name="percent" /> Nueva tarifa de IVA</button>
     <button type="button" class="btn btn--primary" (click)="editPrice(null)"><app-icon name="plus" /> Nuevo precio</button>
   </div>
 </app-page-header>
@@ -53,7 +52,7 @@
             <td class="col-num">{{ formatMoney(price.price_with_tax) }}</td>
             <td class="col-actions">
               <button type="button" class="btn btn--icon" aria-label="Editar" (click)="editPrice(price)"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete({ kind: 'price', item: price })"><app-icon name="trash" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete(price)"><app-icon name="trash" /></button>
             </td>
           </tr>
         } @empty {
@@ -73,6 +72,7 @@
 <section class="card">
   <div class="card__header">
     <h2 class="card__title">Tarifas de IVA</h2>
+    <p class="hint">Solo lectura: las tarifas las define la plataforma. El IVA por defecto de tu empresa se elige en Configuración.</p>
   </div>
   <div class="table-wrap">
     <table class="table">
@@ -82,7 +82,6 @@
           <th class="col-num">Porcentaje</th>
           <th>Por defecto</th>
           <th>Estado</th>
-          <th class="col-actions">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -98,14 +97,10 @@
               }
             </td>
             <td><span class="badge" [class.badge--success]="!tax.is_exempt" [class.badge--info]="tax.is_exempt">{{ tax.status }}</span></td>
-            <td class="col-actions">
-              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="editTax(tax)"><app-icon name="edit" /></button>
-              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete({ kind: 'tax', item: tax })"><app-icon name="trash" /></button>
-            </td>
           </tr>
         } @empty {
           <tr>
-            <td colspan="5">
+            <td colspan="4">
               <div class="empty-state">
                 <p class="empty-state__title">No hay tarifas de IVA</p>
               </div>
@@ -125,12 +120,6 @@
   [taxes]="taxes()"
   (closed)="close()"
   (saved)="savedPrice()"
-/>
-<app-tax-form-modal
-  [open]="modal() === 'tax-create' || modal() === 'tax-edit'"
-  [tax]="modal() === 'tax-edit' ? selectedTax() : null"
-  (closed)="close()"
-  (saved)="savedTax()"
 />
 <app-confirm-modal
   [open]="modal() === 'delete'"

@@ -1,91 +1,149 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, firstValueFrom, map, of, retry, switchMap, tap, throwError, timer } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
-import { AuthUser, LoginResponse } from './auth.model';
+import { SKIP_SESSION_REDIRECT } from '@core/api/http-context';
+import { Company } from '@core/company/company.model';
+import { CompanyService } from '@core/company/company.service';
+import { AuthUser, LoginResponse, PLATFORM_ROLE, UserRole, homePathForRole } from './auth.model';
+import { clearToken, purgeLegacyStorage, readToken, saveToken } from './token-storage';
 
-const TOKEN_KEY = 'inventario.token';
-const USER_KEY = 'inventario.user';
+export { httpErrorMessage } from '@core/api/api-error';
 
-/** Lee `exp` (segundos) del JWT sin verificarlo: la firma la valida siempre el backend. */
-function tokenExpiresAt(token: string): number | null {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
-  } catch {
-    return null;
-  }
-}
+/** Ruta de la pantalla de renovación del plan. */
+export const PLAN_EXPIRED_PATH = '/plan-vencido';
 
+/**
+ * La API entrega un JWT en el login y lo espera en `Authorization: Bearer` (lo agrega el interceptor).
+ * El token vive en sessionStorage (ver `token-storage.ts`); aquí queda en memoria el usuario actual,
+ * que se pide a `/users/me` al abrir la app.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly current = signal<AuthUser | null>(this.readUser());
+  private readonly companyApi = inject(CompanyService);
+  private readonly current = signal<AuthUser | null>(null);
+  private readonly planExpiredFlag = signal(false);
+  private readonly currentCompany = signal<Company | null>(null);
 
   readonly user = this.current.asReadonly();
+  /** Empresa del usuario (`/companies/me`); `null` para plataforma o si aún no se cargó. */
+  readonly company = this.currentCompany.asReadonly();
+  /** La empresa tiene el plan vencido: la sesión sigue válida, pero no se puede operar. */
+  readonly planExpired = this.planExpiredFlag.asReadonly();
 
-  token(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+  /** Recupera la sesión desde el token guardado. La llama el inicializador de la app antes de enrutar. */
+  restore(): Promise<void> {
+    purgeLegacyStorage();
+    if (!readToken()) return Promise.resolve();
+
+    const me$ = this.http
+      .get<AuthUser>(`${API_URL}/users/me`, {
+        context: new HttpContext().set(SKIP_SESSION_REDIRECT, true),
+      })
+      .pipe(
+        // El servidor gratuito puede estar despertando: reintenta si el proxy agota el tiempo.
+        retry({
+          count: 2,
+          delay: (error: unknown) =>
+            error instanceof HttpErrorResponse && [502, 503, 504].includes(error.status)
+              ? timer(3000)
+              : throwError(() => error),
+        }),
+        catchError((error: unknown) => {
+          // Solo el 401 invalida el token; con la API caída se conserva para reintentar.
+          if (error instanceof HttpErrorResponse && error.status === 401) clearToken();
+          return of(null);
+        }),
+        tap((user) => this.current.set(user)),
+        switchMap((user) => (user ? this.refreshPlan() : of(undefined))),
+      );
+
+    return firstValueFrom(me$);
   }
 
   isLoggedIn(): boolean {
-    const token = this.token();
-    if (token === null || this.current() === null) return false;
-    const expiresAt = tokenExpiresAt(token);
-    if (expiresAt !== null && expiresAt <= Date.now()) {
-      this.logout();
-      return false;
-    }
-    return true;
+    return this.current() !== null;
   }
 
-  isAdmin(): boolean {
-    return this.current()?.role === 'Administrador';
+  hasRole(...roles: UserRole[]): boolean {
+    const role = this.current()?.role;
+    return role != null && roles.includes(role);
+  }
+
+  /** Dueño del software: sin empresa, solo opera la plataforma. */
+  isPlatformAdmin(): boolean {
+    return this.hasRole(PLATFORM_ROLE);
+  }
+
+  /** Administrador de la empresa: gestiona usuarios, sedes y los datos de la empresa. */
+  isCompanyAdmin(): boolean {
+    return this.hasRole('Administrador');
+  }
+
+  canManageStaff(): boolean {
+    return this.isCompanyAdmin();
+  }
+
+  /** Inicio del panel: con el plan vencido, la pantalla de renovación; si no, según el rol. */
+  homePath(): string {
+    if (this.planExpiredFlag()) return PLAN_EXPIRED_PATH;
+    return homePathForRole(this.current()?.role);
   }
 
   login(email: string, password: string): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>(`${API_URL}/users/login`, { email, password })
-      .pipe(tap((response) => this.persist(response)));
+    return this.http.post<LoginResponse>(`${API_URL}/users/login`, { email, password }).pipe(
+      tap((response) => {
+        saveToken(response.access_token);
+        this.current.set(response.user);
+      }),
+      // El login funciona con el plan vencido: se pregunta aparte para mandar a la pantalla de renovación.
+      switchMap((response) => this.refreshPlan().pipe(map(() => response))),
+    );
   }
 
+  /** Consulta el plan de la empresa (`/companies/me`) y actualiza `planExpired`. Los errores no tumban la sesión. */
+  refreshPlan(): Observable<void> {
+    const user = this.current();
+    if (!user || user.company_id === null) {
+      this.planExpiredFlag.set(false);
+      this.currentCompany.set(null);
+      return of(undefined);
+    }
+    return this.companyApi.me(true).pipe(
+      tap((company) => {
+        this.currentCompany.set(company);
+        this.planExpiredFlag.set(company.plan_expired);
+      }),
+      map(() => undefined),
+      catchError(() => of(undefined)),
+    );
+  }
+
+  /** Actualiza la empresa en memoria (por ejemplo tras editarla en Mi cuenta). */
+  setCompany(company: Company): void {
+    this.currentCompany.set(company);
+  }
+
+  setPlanExpired(expired: boolean): void {
+    this.planExpiredFlag.set(expired);
+  }
+
+  /** Cierra la sesión: la API no guarda estado de sesión, basta con olvidar el token. */
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    this.clearSession();
+  }
+
+  /** Olvida el token y el usuario en la app (por ejemplo, porque la API respondió 401). */
+  clearSession(): void {
+    clearToken();
     this.current.set(null);
+    this.currentCompany.set(null);
+    this.planExpiredFlag.set(false);
   }
 
-  private persist(response: LoginResponse): void {
-    localStorage.setItem(TOKEN_KEY, response.access_token);
-    localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-    this.current.set(response.user);
+  /** Actualiza el usuario en sesión (por ejemplo tras editar la cuenta). */
+  setUser(user: AuthUser): void {
+    this.current.set(user);
   }
-
-  private readUser(): AuthUser | null {
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw || !localStorage.getItem(TOKEN_KEY)) return null;
-    try {
-      return JSON.parse(raw) as AuthUser;
-    } catch {
-      return null;
-    }
-  }
-}
-
-export function httpErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof HttpErrorResponse) {
-    // Sin respuesta: la API está apagada, no es alcanzable o rechazó el origen (CORS).
-    if (error.status === 0) return `${fallback}. No hay conexión con la API; revisa que el backend esté encendido`;
-    const detail = error.error?.detail;
-    if (typeof detail === 'string' && detail.trim()) return detail;
-    // FastAPI devuelve los errores de validación (422) como una lista de { loc, msg }.
-    if (Array.isArray(detail) && detail.length) {
-      const fields = detail
-        .map((item) => (Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : null))
-        .filter((field): field is string => typeof field === 'string');
-      if (fields.length) return `${fallback}. Revisa: ${[...new Set(fields)].join(', ')}`;
-    }
-    if (error.status >= 500) return `${fallback}. Error del servidor (${error.status})`;
-  }
-  return fallback;
 }

@@ -1,0 +1,36 @@
+<app-modal [open]="open()" title="Autorización requerida" size="sm" (closed)="dismiss()">
+  <p class="hint">
+    Esta operación necesita la autorización de {{ whoLabel() }}. Escribe sus datos ahora: no se guardan.
+  </p>
+  @if (notice()) {
+    <p class="hint hint--warning" role="status">{{ notice() }}</p>
+  }
+  @if (error()) {
+    <p class="auth-error" role="alert">{{ error() }}</p>
+  }
+  @if (locked()) {
+    <p class="hint hint--warning" role="status">
+      Demasiados intentos fallidos. Podrás volver a intentarlo en <strong>{{ countdown() }}</strong>.
+    </p>
+  }
+
+  <form class="form-grid" autocomplete="off" (submit)="$event.preventDefault(); submit()">
+    <div class="field field--full">
+      <label class="label" for="ad-email">Correo de quien autoriza</label>
+      <input #email id="ad-email" class="input" type="text" inputmode="email" name="auth-email" autocomplete="off"
+        autocapitalize="off" spellcheck="false" [disabled]="locked()" />
+    </div>
+    <div class="field field--full">
+      <label class="label" for="ad-password">Contraseña</label>
+      <input #password id="ad-password" class="input" type="password" name="auth-password" autocomplete="new-password"
+        [disabled]="locked()" (keydown.enter)="submit()" />
+    </div>
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="dismiss()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="busy() || locked()" (click)="submit()">
+      {{ busy() ? 'Verificando…' : locked() ? 'Bloqueado ' + countdown() : 'Autorizar' }}
+    </button>
+  </div>
+</app-modal>

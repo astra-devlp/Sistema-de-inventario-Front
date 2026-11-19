@@ -1,0 +1,314 @@
+/* Venta: pantalla de caja, cobro y comprobante (con su impresión para papel térmico de 80 mm). */
+.sale {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.sale__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.sale__search-input {
+  font-size: 18px;
+  min-height: 52px;
+}
+
+.sale__summary {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  position: sticky;
+  top: var(--space-4);
+}
+
+.sale__total {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sale__qty {
+  width: 90px;
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.sale__reprint {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sale__receipt {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.sale__receipt-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sale td small,
+.sale td .field-error {
+  display: block;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.row--error {
+  background: var(--danger-soft);
+}
+
+.charge__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 18px;
+}
+
+.charge__total strong {
+  font-size: 28px;
+}
+
+.charge__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.charge__bills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.charge__change {
+  font-size: 18px;
+}
+
+.charge__customer {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+
+.charge__subtitle {
+  font-size: 14px;
+  margin: 0 0 var(--space-2);
+}
+
+.charge__results {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+.charge__pick {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.charge__pick:hover,
+.charge__pick:focus-visible {
+  background: var(--primary-soft);
+}
+
+.charge__new {
+  margin-top: var(--space-3);
+}
+
+/* Comprobante: 72 mm útiles en un rollo de 80 mm. */
+.receipt {
+  width: 72mm;
+  max-width: 100%;
+  padding: 4mm 3mm;
+  background: #fff;
+  color: #000;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.receipt p,
+.receipt h2,
+.receipt dl,
+.receipt dd {
+  margin: 0;
+}
+
+.receipt hr {
+  border: 0;
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+
+.receipt__head,
+.receipt__center,
+.receipt__doc,
+.receipt__code,
+.receipt__legal,
+.receipt__void {
+  text-align: center;
+}
+
+.receipt__name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.receipt__doc {
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+.receipt__code {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.receipt__void {
+  font-weight: 700;
+  border: 1px solid #000;
+  margin: 4px 0;
+}
+
+.receipt__lines {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.receipt__lines td {
+  padding: 0;
+  border: 0;
+}
+
+.receipt__detail {
+  font-size: 11px;
+}
+
+.receipt__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.receipt__totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receipt__total {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.receipt__legal {
+  font-weight: 700;
+}
+
+.sale__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.sale__receipt app-sale-detail {
+  align-self: stretch;
+}
+
+.sale__badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.return__table td {
+  vertical-align: top;
+}
+
+@media (max-width: 900px) {
+  .sale {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sale__summary {
+    position: static;
+  }
+}
+
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .receipt,
+  .receipt * {
+    visibility: visible !important;
+  }
+
+  body:has(.return-view) .sale__receipt .receipt {
+    display: none !important;
+  }
+
+  .modal-backdrop,
+  .modal,
+  .modal__body {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    max-height: none !important;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+  }
+
+  .receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    padding: 2mm 3mm;
+    box-shadow: none;
+  }
+}
+
+.sale__main > .card:not(:has(.table-wrap)) {
+  padding: var(--space-3) var(--space-4);
+}
+
+.sale .table {
+  min-width: 0;
+}

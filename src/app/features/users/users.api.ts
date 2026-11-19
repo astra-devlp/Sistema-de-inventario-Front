@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
 import { AuthUser, UserRole } from '@core/auth/auth.model';
 
+/** `PATCH /users` es cerrado (422 con campos de más); `is_active` solo se envía al editar. */
 export interface UserPayload {
   name: string;
   email: string;
@@ -16,6 +17,10 @@ export interface UserPayload {
 @Injectable({ providedIn: 'root' })
 export class UsersApi {
   private readonly http = inject(HttpClient);
+
+  me(): Observable<AuthUser> {
+    return this.http.get<AuthUser>(`${API_URL}/users/me`);
+  }
 
   list(query = ''): Observable<AuthUser[]> {
     const params = query.trim() ? new HttpParams().set('name', query.trim()) : undefined;

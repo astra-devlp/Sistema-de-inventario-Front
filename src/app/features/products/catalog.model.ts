@@ -29,12 +29,6 @@ export interface Unit {
   unit_type: UnitType;
 }
 
-export interface UnitPayload {
-  name: string;
-  abbreviation: string;
-  unit_type: UnitType;
-}
-
 export const PACKAGINGS = ['Caja', 'Paquete', 'Bulto', 'Docena', 'Pallet'] as const;
 export type Packaging = (typeof PACKAGINGS)[number];
 
@@ -60,13 +54,6 @@ export interface Tax {
   is_exempt: boolean;
   is_default: boolean;
   status: string;
-}
-
-export interface TaxPayload {
-  name: string;
-  rate: number;
-  is_exempt: boolean;
-  is_default: boolean;
 }
 
 export const BARCODE_TYPES = ['EAN-13', 'EAN-8', 'UPC-A', 'Code 128', 'QR'] as const;

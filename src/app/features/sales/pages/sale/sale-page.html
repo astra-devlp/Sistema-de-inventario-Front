@@ -1,0 +1,162 @@
+<app-page-header title="Venta" subtitle="Escanea o escribe un producto y pulsa Enter">
+  <div actions class="sale__reprint">
+    <input class="input" type="text" autocomplete="off" placeholder="Reimprimir: código de recibo (C1-0001)" aria-label="Código de recibo"
+      [ngModel]="receiptQuery()" (ngModelChange)="receiptQuery.set($event)" (keydown.enter)="findReceipt()" />
+    <button type="button" class="btn btn--outline" [disabled]="receiptBusy()" (click)="findReceipt()">Buscar</button>
+  </div>
+</app-page-header>
+
+@if (loading()) {
+  <p class="hint">Cargando…</p>
+} @else if (error()) {
+  <p class="auth-error" role="alert">{{ error() }}</p>
+} @else {
+  @if (receiptError()) {
+    <p class="auth-error" role="alert">{{ receiptError() }}</p>
+  }
+
+  @if (pending(); as p) {
+    <div class="auth-error sale__pending" role="alert">
+      <strong>Hay un cobro sin confirmar.</strong>
+      <p>
+        Se envió {{ p.saved_at | date: 'HH:mm' }} y no llegó una respuesta: puede que sí se haya cobrado. Reintenta con la misma clave
+        (si ya estaba registrado, se muestra ese mismo comprobante y no se vende otra vez) o, solo si confirmas que no se cobró,
+        descártalo.
+      </p>
+      <div class="sale__receipt-actions">
+        <button type="button" class="btn btn--primary" [disabled]="charging()" (click)="retryPending()">
+          {{ charging() ? 'Reintentando…' : 'Reintentar cobro' }}
+        </button>
+        <button type="button" class="btn btn--outline" [disabled]="charging()" (click)="askDiscard()">Descartar</button>
+      </div>
+    </div>
+  }
+
+  <div class="sale">
+    <section class="sale__main">
+      <div class="sale__search">
+        <input #searchBox class="input sale__search-input" type="text" autocomplete="off" autofocus
+          placeholder="Código de barras, SKU o nombre" aria-label="Buscar producto"
+          [ngModel]="query()" (ngModelChange)="query.set($event)" (keydown.enter)="search()" />
+      </div>
+
+      @if (notice()) {
+        <p class="hint hint--warning" role="status">{{ notice() }}</p>
+      }
+
+      @if (choices().length) {
+        <div class="card sale__choices">
+          <p class="hint">
+            Elige un producto
+            @if (choicesMore()) {
+              — hay más resultados: escribe más del nombre para afinar
+            }
+          </p>
+          <ul class="charge__results">
+            @for (p of choices(); track p.id) {
+              <li>
+                <button type="button" class="charge__pick" (click)="choose(p)">
+                  <span>{{ p.name }} <small>({{ p.sku }})</small></span>
+                  <span>
+                    {{ formatCop(p.price_with_tax) }}
+                    @if (p.stock !== undefined) {
+                      <small> · stock {{ formatQuantity(p.stock) }}</small>
+                    }
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (shortages().length) {
+        <div class="auth-error" role="alert">
+          <strong>No hay stock suficiente:</strong>
+          <ul>
+            @for (s of shortages(); track s) {
+              <li>{{ s }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (receipt(); as r) {
+        <div class="card sale__receipt">
+          @if (receiptNote()) {
+            <p class="acc-toast" role="status">{{ receiptNote() }}</p>
+          }
+          <div class="sale__receipt-actions">
+            <button type="button" class="btn btn--primary" (click)="print()">Imprimir</button>
+            <button type="button" class="btn btn--outline" (click)="newSale()">Nueva venta</button>
+          </div>
+          <app-receipt [sale]="r" />
+          <app-sale-detail [sale]="r" (changed)="receipt.set($event)" />
+        </div>
+      } @else {
+        <div class="card">
+          @if (lines().length === 0) {
+            <p class="hint">El carrito está vacío.</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (line of lines(); track line.product.id; let i = $index) {
+                    <tr [class.row--error]="rowErrors().has(i) || qtyErrors().has(line.product.id)">
+                      <td>
+                        {{ line.product.name }}
+                        @if (line.product.stock !== undefined) {
+                          <small class="hint">Stock en la sede: {{ formatQuantity(line.product.stock) }} (informativo)</small>
+                        }
+                        @if (rowErrors().get(i); as e) {
+                          <small class="field-error" role="alert">{{ e }}</small>
+                        }
+                        @if (qtyErrors().get(line.product.id); as e) {
+                          <small class="field-error" role="alert">{{ e }}</small>
+                        }
+                      </td>
+                      <td>{{ formatCop(line.product.price_with_tax) }}</td>
+                      <td>
+                        <input class="input sale__qty" type="text" inputmode="decimal" autocomplete="off"
+                          [attr.aria-label]="'Cantidad de ' + line.product.name" [value]="line.quantity"
+                          (change)="changeQuantity(line, $event)" (keydown.enter)="focusSearch()" />
+                      </td>
+                      <td>{{ formatCop(lineTotal(line.product.price_with_tax, line.quantity)) }}</td>
+                      <td>
+                        <button type="button" class="btn btn--ghost btn--sm" (click)="remove(line)">Quitar</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <aside class="card sale__summary">
+      <p class="hint">Total (vista previa)</p>
+      <p class="sale__total">{{ formatCop(total()) }}</p>
+      <button type="button" class="btn btn--primary btn--block" [disabled]="!canCharge()" (click)="openCharge()">Cobrar</button>
+      <button type="button" class="btn btn--outline btn--block" [disabled]="lines().length === 0" (click)="clear()">Vaciar carrito</button>
+      <p class="hint">El valor definitivo lo calcula el servidor al cobrar.</p>
+    </aside>
+  </div>
+
+  <app-confirm-modal [open]="discardOpen()" title="Descartar cobro sin confirmar"
+    message="¿Confirmas que ese cobro NO se hizo? Si el cliente ya pagó o la venta quedó registrada, no lo descartes: reintenta."
+    confirmLabel="Sí, no se cobró" (closed)="discardOpen.set(false)" (confirmed)="discardPending()" />
+
+  <app-charge-modal [open]="chargeOpen()" [total]="total()" [busy]="charging()" [error]="chargeError()"
+    (closed)="closeCharge()" (confirm)="charge($event)" />
+}

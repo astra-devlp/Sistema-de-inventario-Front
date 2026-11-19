@@ -23,7 +23,7 @@ export class CategoriesPage {
   private readonly products = signal<ProductOption[]>([]);
   protected readonly query = signal('');
   protected readonly isActive = signal<boolean | null>(null);
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<CategoryModal>(null);
   protected readonly selected = signal<Category | null>(null);

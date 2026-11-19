@@ -1,0 +1,53 @@
+<section class="card">
+  <div class="toolbar">
+    <h2 class="acc-panel__title">Tarifas de IVA (de todas las empresas)</h2>
+    <button type="button" class="btn btn--primary" (click)="edit(null)"><app-icon name="plus" /> Nueva tarifa de IVA</button>
+  </div>
+
+  @if (error()) {
+    <p class="auth-error" role="alert" style="margin: 16px">{{ error() }}</p>
+  }
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th class="col-num">Porcentaje</th>
+          <th>Estado</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (tax of taxes(); track tax.id) {
+          <tr>
+            <td>{{ tax.name }}</td>
+            <td class="col-num">{{ rate(tax) }}</td>
+            <td><span class="badge" [class.badge--success]="!tax.is_exempt" [class.badge--info]="tax.is_exempt">{{ tax.status }}</span></td>
+            <td class="col-actions">
+              <button type="button" class="btn btn--icon" aria-label="Editar" (click)="edit(tax)"><app-icon name="edit" /></button>
+              <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="askDelete(tax)"><app-icon name="trash" /></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">
+                <p class="empty-state__title">{{ loading() ? 'Cargando tarifas…' : 'No hay tarifas de IVA' }}</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<app-tax-form-modal [open]="modal() === 'form'" [tax]="selected()" (closed)="close()" (saved)="saved()" />
+<app-confirm-modal
+  [open]="modal() === 'delete'"
+  title="Confirmar eliminación"
+  [message]="'¿Deseas eliminar la tarifa ' + (selected()?.name ?? '') + '?'"
+  (closed)="close()"
+  (confirmed)="remove()"
+/>

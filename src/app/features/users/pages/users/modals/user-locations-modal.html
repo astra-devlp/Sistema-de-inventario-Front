@@ -1,0 +1,33 @@
+<app-modal [open]="open()" [title]="'Sedes de ' + (user()?.name || '')" (closed)="closed.emit()">
+  @if (error()) {
+    <p class="auth-error">{{ error() }}</p>
+  }
+  @if (user()?.role === 'Administrador') {
+    <p class="hint">El Administrador opera en todas las sedes aunque no tenga ninguna asignada.</p>
+  } @else {
+    <p class="hint">Sin ninguna sede asignada, esta persona no puede operar la caja.</p>
+  }
+  @if (loading()) {
+    <p class="text-muted">Cargando sedes…</p>
+  } @else {
+    <div class="form-grid">
+      @for (location of locations(); track location.id) {
+        <label class="check field--full">
+          <input type="checkbox" [checked]="isChecked(location.id)" (change)="toggle(location.id, $event)" />
+          {{ location.name }}
+          @if (!location.is_active) {
+            <span class="badge badge--danger">Inactiva</span>
+          }
+        </label>
+      } @empty {
+        <p class="text-muted field--full">Aún no hay sedes.</p>
+      }
+    </div>
+  }
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="submitting() || loading()" (click)="submit()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>

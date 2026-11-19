@@ -1,0 +1,57 @@
+import { Route } from '@angular/router';
+import { UserRole } from '@core/auth/auth.model';
+import { routes } from '../../app.routes';
+import { NAV_GROUPS, navGroupsForRole } from './nav.config';
+import { NavGroup } from './nav.model';
+
+function ids(role: UserRole): string[] {
+  return navGroupsForRole(NAV_GROUPS, role).map((group) => group.id);
+}
+
+describe('menú por rol', () => {
+  it('plataforma solo ve su pantalla', () => {
+    expect(ids('Administrador de plataforma')).toEqual(['platform']);
+  });
+
+  it('el Administrador de la empresa ve Productos, Informe diario, Clientes, Sedes y Usuarios', () => {
+    expect(ids('Administrador')).toEqual(['sales', 'products', 'stock', 'shift', 'reports', 'customers', 'locations', 'users']);
+  });
+
+  it('el Supervisor ve el Informe diario pero no Usuarios ni Plataforma', () => {
+    expect(ids('Supervisor')).toEqual(['sales', 'products', 'stock', 'shift', 'reports', 'customers', 'locations']);
+  });
+
+  it('el Cajero no ve el Informe diario, ni Usuarios ni Plataforma', () => {
+    expect(ids('Usuario')).toEqual(['sales', 'products', 'stock', 'shift', 'customers', 'locations']);
+  });
+
+  it('sin rol no se ve ningún grupo restringido', () => {
+    expect(navGroupsForRole(NAV_GROUPS, null)).toEqual([]);
+  });
+
+  it('un grupo sin roles lo ven todos', () => {
+    const open: NavGroup = { id: 'abierto', label: 'Abierto', icon: 'home', items: [] };
+    expect(navGroupsForRole([open], 'Usuario')).toEqual([open]);
+    expect(navGroupsForRole([open], null)).toEqual([open]);
+  });
+});
+
+describe('enlaces del menú', () => {
+  const layout = routes.find((route) => route.component !== undefined);
+  const known = new Set((layout?.children ?? []).map((route: Route) => route.path));
+
+  it('cada enlace del menú apunta a una ruta que existe', () => {
+    const paths = NAV_GROUPS.flatMap((group) => [group.path, ...group.items.map((item) => item.path)]).filter(
+      (path): path is string => !!path,
+    );
+    expect(paths.length).toBeGreaterThan(0);
+    for (const path of paths) expect(known.has(path.split('/')[1]), `${path} no tiene ruta`).toBe(true);
+  });
+
+  it('las rutas de negocio y de plataforma están protegidas por rol', () => {
+    for (const path of ['plataforma', 'venta', 'productos', 'stock', 'turno', 'informes', 'clientes', 'sedes', 'usuarios']) {
+      const route = layout?.children?.find((child) => child.path === path);
+      expect(route?.canActivate?.length, `${path} sin guard de rol`).toBeGreaterThan(0);
+    }
+  });
+});

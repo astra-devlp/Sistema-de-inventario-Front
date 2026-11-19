@@ -1,0 +1,57 @@
+<article class="receipt" aria-label="Comprobante de devolución">
+  <header class="receipt__head">
+    @if (issuerName(); as name) {
+      <h2 class="receipt__name">{{ name }}</h2>
+    }
+    @if (issuer()?.name && issuer()?.legal_name && issuer()?.name !== issuer()?.legal_name) {
+      <p>{{ issuer()?.name }}</p>
+    }
+    @if (issuer()?.tax_id) {
+      <p>NIT {{ issuer()?.tax_id }}</p>
+    }
+    @if (issuerPlace()) {
+      <p>{{ issuerPlace() }}</p>
+    }
+    @if (issuer()?.phone) {
+      <p>Tel. {{ issuer()?.phone }}</p>
+    }
+  </header>
+
+  <p class="receipt__doc">{{ documentLabel() }}</p>
+  <p class="receipt__code">{{ saleReturn().return_code }}</p>
+  <p class="receipt__center">{{ saleReturn().created_at | date: 'dd/MM/yyyy HH:mm' : bogota }}</p>
+  <p class="receipt__center">Venta {{ saleReturn().sale_receipt_code }}</p>
+  <p class="receipt__center">Motivo: {{ saleReturn().reason }}</p>
+
+  <hr />
+  <table class="receipt__lines">
+    <tbody>
+      @for (line of saleReturn().lines; track line.id) {
+        <tr>
+          <td colspan="2">{{ line.product_name }}</td>
+        </tr>
+        <tr class="receipt__detail">
+          <td>
+            {{ formatQuantity(line.quantity) }} × {{ formatCop(line.unit_price_with_tax) }}
+            · {{ line.restock ? 'al stock' : 'dañado' }}
+          </td>
+          <td class="receipt__num">{{ formatCop(line.amount) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <hr />
+
+  <dl class="receipt__totals">
+    <div><dt>IVA incluido</dt><dd>{{ formatCop(saleReturn().tax_total) }}</dd></div>
+    <div class="receipt__total"><dt>TOTAL DEVUELTO</dt><dd>{{ formatCop(saleReturn().total) }}</dd></div>
+  </dl>
+  <hr />
+  <dl class="receipt__totals">
+    @for (refund of saleReturn().refunds; track refund.method) {
+      <div><dt>Reembolso {{ labels[refund.method] }}</dt><dd>{{ formatCop(refund.amount) }}</dd></div>
+    }
+  </dl>
+  <hr />
+  <p class="receipt__legal">{{ saleReturn().legal_notice }}</p>
+</article>

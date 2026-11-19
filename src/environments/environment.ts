@@ -1,3 +1,5 @@
+/** Desarrollo: `ng serve` reenvía /api a la API local (proxy.conf.json). */
 export const environment = {
-  apiUrl: 'http://127.0.0.1:8000',
+  production: false,
+  apiUrl: '/api',
 };

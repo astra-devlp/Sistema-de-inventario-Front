@@ -1,0 +1,182 @@
+<app-page-header
+  title="Turno de caja"
+  subtitle="Abre tu turno con la base en efectivo y ciérralo al final contando lo que hay: el sistema no te dice cuánto esperaba hasta que cierras."
+/>
+
+@if (error()) {
+  <p class="auth-error" style="margin-bottom: 16px" role="alert">{{ error() }}</p>
+}
+
+@if (loading()) {
+  <p class="text-muted">Cargando…</p>
+} @else if (current(); as shift) {
+  <section class="card" style="margin-bottom: 24px">
+    <div class="toolbar">
+      <h2 class="acc-panel__title">Mi turno abierto</h2>
+      <button type="button" class="btn btn--danger" (click)="closeMine()">Cerrar turno</button>
+    </div>
+    <div style="padding: 16px">
+      <dl class="business-profile">
+        <div class="business-profile__item">
+          <dt>Caja</dt>
+          <dd>{{ registerLabel(shift.cash_register_id) }}</dd>
+        </div>
+        <div class="business-profile__item">
+          <dt>Sede</dt>
+          <dd>{{ locationName(shift.location_id) }}</dd>
+        </div>
+        <div class="business-profile__item">
+          <dt>Abierto</dt>
+          <dd>{{ shift.opened_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        </div>
+        <div class="business-profile__item">
+          <dt>Base de apertura</dt>
+          <dd>{{ formatCop(shift.opening_cash) }}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+} @else if (withoutLocation()) {
+  <p class="auth-error" role="status">{{ noLocationMessage }}</p>
+} @else {
+  <section class="card" style="margin-bottom: 24px">
+    <div class="toolbar"><h2 class="acc-panel__title">Abrir turno</h2></div>
+    <form class="form-grid" style="padding: 16px" (submit)="$event.preventDefault(); openShift()">
+      @if (conflict(); as c) {
+        <p class="auth-error field--full" role="alert">
+          {{ c.message }}
+          @if (c.kind === 'user_busy') {
+            <button type="button" class="btn btn--outline" style="margin-left: 12px" (click)="showMine()">Ver mi turno</button>
+          }
+        </p>
+      }
+      @if (formError()) {
+        <p class="auth-error field--full" role="alert">{{ formError() }}</p>
+      }
+      <div class="field">
+        <label class="label" for="sh-register">Caja <span class="required">*</span></label>
+        <select id="sh-register" class="select" (change)="onRegister($event)">
+          @for (register of openable(); track register.id) {
+            <option [value]="register.id" [selected]="register.id === registerId()">
+              {{ register.code }} · {{ register.name }} — {{ locationName(register.location_id) }}
+            </option>
+          } @empty {
+            <option value="">No hay cajas activas</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="sh-cash">Efectivo de apertura <span class="required">*</span></label>
+        <input
+          id="sh-cash"
+          class="input"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          [ngModel]="openingCash()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="openingCash.set($event)"
+        />
+        <span class="hint">Sin separadores de miles; hasta 2 decimales (ej. 50000 o 50000.50).</span>
+      </div>
+      <div class="field field--full">
+        <button type="submit" class="btn btn--primary" [disabled]="opening() || openable().length === 0">
+          {{ opening() ? 'Abriendo…' : 'Abrir turno' }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+
+@if (isStaff() && !loading()) {
+  <section class="card">
+    <div class="toolbar" style="gap: 8px">
+      <h2 class="acc-panel__title">Turnos</h2>
+      <select class="select" aria-label="Estado" (change)="onStatus($event)">
+        <option value="">Todos</option>
+        <option value="abierto" [selected]="statusFilter() === 'abierto'">Abiertos</option>
+        <option value="cerrado" [selected]="statusFilter() === 'cerrado'">Cerrados</option>
+      </select>
+    </div>
+    <p class="hint" style="padding: 0 16px">
+      @if (auth.isCompanyAdmin()) {
+        Ves los turnos de toda la empresa.
+      } @else {
+        Ves tus turnos y los de las sedes que supervisas.
+      }
+      Puedes cerrar el turno abierto de otra persona (cierre forzado): cuentas tú el efectivo y el turno queda marcado.
+    </p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Caja</th>
+            <th>Sede</th>
+            <th>Cajero</th>
+            <th>Apertura</th>
+            <th>Estado</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (shift of shifts(); track shift.id) {
+            <tr>
+              <td>{{ registerLabel(shift.cash_register_id) }}</td>
+              <td class="text-muted">{{ locationName(shift.location_id) }}</td>
+              <td>{{ userName(shift.user_id) }}</td>
+              <td class="text-muted">{{ shift.opened_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="badge" [class.badge--success]="shift.status === 'abierto'">{{ shift.status === 'abierto' ? 'Abierto' : 'Cerrado' }}</span>
+                @if (shift.forced_close) {
+                  <span class="badge badge--warning">Forzado</span>
+                }
+              </td>
+              <td class="col-actions">
+                <button type="button" class="btn btn--outline" (click)="openDetail(shift)">Detalle</button>
+                @if (canForce(shift)) {
+                  <button type="button" class="btn btn--danger" (click)="forceClose(shift)">Cierre forzado</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6">
+                <div class="empty-state"><p class="empty-state__title">Sin turnos</p></div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (hasMore()) {
+      <div style="padding: 12px; text-align: center">
+        <button type="button" class="btn btn--outline" (click)="loadMore()">Ver más</button>
+      </div>
+    }
+  </section>
+}
+
+<app-close-shift-modal [target]="closeTarget()" (dismissed)="closeDismissed($event)" />
+
+<app-modal [open]="detail() !== null" title="Detalle del turno" (closed)="detail.set(null)">
+  @if (detail(); as shift) {
+    <p>
+      <strong>{{ registerLabel(shift.cash_register_id) }}</strong> · {{ locationName(shift.location_id) }} ·
+      {{ userName(shift.user_id) }}
+    </p>
+    @if (shift.status === 'cerrado') {
+      @if (shift.closed_by_user_id && shift.forced_close) {
+        <p class="hint">Cerrado por {{ userName(shift.closed_by_user_id) }} (cierre forzado).</p>
+      }
+      <app-shift-result [shift]="shift" />
+    } @else {
+      <p class="hint">
+        Abierto el {{ shift.opened_at | date: 'dd/MM/yyyy HH:mm' }} con base de {{ formatCop(shift.opening_cash) }}. El efectivo
+        esperado no se muestra hasta el cierre.
+      </p>
+    }
+  }
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="detail.set(null)">Cerrar</button>
+  </div>
+</app-modal>

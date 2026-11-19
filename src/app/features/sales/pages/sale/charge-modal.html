@@ -1,0 +1,111 @@
+<app-modal [open]="open()" title="Cobrar" size="lg" (closed)="closed.emit()">
+  <p class="charge__total">
+    <span>Total a pagar</span>
+    <strong>{{ formatCop(total()) }}</strong>
+  </p>
+
+  @if (error()) {
+    <p class="auth-error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="form-grid">
+    <div class="field field--full">
+      <label class="label" for="ch-cash">Efectivo recibido</label>
+      <div class="charge__row">
+        <input id="ch-cash" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$ 0"
+          [value]="display(cash())" (input)="typeMoney('cash', $event)" (keydown.enter)="submit()" />
+        <button type="button" class="btn btn--outline" (click)="exact()">Exacto</button>
+      </div>
+      <div class="charge__bills">
+        @for (bill of bills; track bill) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="setBill(bill)">{{ formatCop(bill) }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="ch-card">Tarjeta</label>
+      <input id="ch-card" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$ 0"
+        [value]="display(card())" (input)="typeMoney('card', $event)" />
+      <input class="input" type="text" maxlength="100" autocomplete="off" placeholder="Referencia (opcional)"
+        aria-label="Referencia de tarjeta" [ngModel]="cardRef()" (ngModelChange)="cardRef.set($event)" />
+    </div>
+
+    <div class="field">
+      <label class="label" for="ch-transfer">Transferencia</label>
+      <input id="ch-transfer" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$ 0"
+        [value]="display(transfer())" (input)="typeMoney('transfer', $event)" />
+      <input class="input" type="text" maxlength="100" autocomplete="off" placeholder="Referencia (opcional)"
+        aria-label="Referencia de transferencia" [ngModel]="transferRef()" (ngModelChange)="transferRef.set($event)" />
+    </div>
+  </div>
+
+  @if (problem()) {
+    <p class="hint hint--warning" role="status">{{ problem() }}</p>
+  }
+  @if (change() !== null) {
+    <p class="charge__change" role="status">Vuelto: <strong>{{ formatCop(change()) }}</strong></p>
+  }
+
+  <section class="charge__customer">
+    <h3 class="charge__subtitle">Cliente <span class="hint">(opcional: sin cliente es consumidor final)</span></h3>
+    @if (customerError()) {
+      <p class="auth-error" role="alert">{{ customerError() }}</p>
+    }
+    @if (customer(); as c) {
+      <p>
+        <strong>{{ c.name }}</strong> · {{ c.document_type_label }} {{ c.document_number }}
+        <button type="button" class="btn btn--ghost btn--sm" (click)="customer.set(null)">Quitar</button>
+      </p>
+    } @else {
+      <div class="charge__row">
+        <input class="input" type="text" autocomplete="off" placeholder="Buscar por nombre o documento" aria-label="Buscar cliente"
+          [ngModel]="customerQuery()" (ngModelChange)="customerQuery.set($event)" (keydown.enter)="searchCustomers()" />
+        <button type="button" class="btn btn--outline" (click)="searchCustomers()">Buscar</button>
+        <button type="button" class="btn btn--ghost" (click)="showNewCustomer.set(!showNewCustomer())">Nuevo</button>
+      </div>
+      @if (customerResults().length) {
+        <ul class="charge__results">
+          @for (c of customerResults(); track c.id) {
+            <li><button type="button" class="charge__pick" (click)="pickCustomer(c)">{{ c.name }} · {{ c.document_number }}</button></li>
+          }
+        </ul>
+      }
+      @if (showNewCustomer()) {
+        <div class="form-grid charge__new">
+          <div class="field field--full">
+            <input class="input" type="text" autocomplete="off" placeholder="Nombre" aria-label="Nombre del cliente"
+              [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
+          </div>
+          <div class="field">
+            <select class="select" aria-label="Tipo de documento" [ngModel]="newType()" (ngModelChange)="newType.set($event)">
+              @for (t of documentTypes(); track t.code) {
+                <option [value]="t.code">{{ t.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <input class="input" type="text" autocomplete="off" placeholder="Número de documento" aria-label="Número de documento"
+              [ngModel]="newNumber()" (ngModelChange)="newNumber.set($event)" />
+          </div>
+          @if (newType() === nitCode) {
+            <div class="field">
+              <input class="input" type="text" maxlength="1" autocomplete="off" placeholder="Dígito de verificación"
+                aria-label="Dígito de verificación" [ngModel]="newCheckDigit()" (ngModelChange)="newCheckDigit.set($event)" />
+            </div>
+          }
+          <div class="field field--full">
+            <button type="button" class="btn btn--outline" [disabled]="savingCustomer()" (click)="saveNewCustomer()">Crear y usar</button>
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" [disabled]="busy()" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="!canConfirm()" (click)="submit()">
+      {{ busy() ? 'Cobrando…' : 'Cobrar ' + formatCop(total()) }}
+    </button>
+  </div>
+</app-modal>

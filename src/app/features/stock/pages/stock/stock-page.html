@@ -1,0 +1,190 @@
+<app-page-header
+  title="Stock"
+  subtitle="Existencias por sede. El saldo es la suma de los movimientos, que no se editan ni se borran: un error se corrige con un ajuste."
+>
+  <div actions>
+    @if (options().length > 0) {
+      <select class="select" aria-label="Sede" [value]="locationId()" (change)="onLocation($event)">
+        @for (option of options(); track option.id) {
+          <option [value]="option.id" [selected]="option.id === locationId()">
+            {{ option.name }}{{ option.is_active ? '' : ' (inactiva)' }}
+          </option>
+        }
+      </select>
+    }
+  </div>
+</app-page-header>
+
+@if (error()) {
+  <p class="auth-error" style="margin-bottom: 16px" role="alert">{{ error() }}</p>
+}
+@if (success()) {
+  <p class="acc-toast" style="margin-bottom: 16px" role="status">{{ success() }}</p>
+}
+@if (withoutLocation()) {
+  <p class="auth-error" role="status">{{ noLocationMessage }}</p>
+} @else if (location() && !location()!.is_active) {
+  <p class="hint" style="margin-bottom: 16px">Esta sede está inactiva: se consulta, pero no recibe movimientos.</p>
+}
+
+@if (location()) {
+  <div class="toolbar" style="margin-bottom: 12px; gap: 8px">
+    <button type="button" class="btn" [class.btn--primary]="tab() === 'saldos'" [class.btn--outline]="tab() !== 'saldos'" (click)="setTab('saldos')">
+      Saldos
+    </button>
+    <button type="button" class="btn" [class.btn--primary]="tab() === 'movimientos'" [class.btn--outline]="tab() !== 'movimientos'" (click)="setTab('movimientos')">
+      Movimientos
+    </button>
+    @if (isAdmin()) {
+      <button type="button" class="btn" [class.btn--primary]="tab() === 'inicial'" [class.btn--outline]="tab() !== 'inicial'" (click)="setTab('inicial')">
+        Inventario inicial
+      </button>
+    }
+  </div>
+
+  @if (tab() === 'saldos') {
+    <section class="card">
+      <div class="toolbar">
+        <div class="toolbar__search">
+          <app-icon name="search" />
+          <input class="input" type="search" placeholder="Buscar por nombre o SKU" [value]="query()" (input)="onQuery($event)" />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>SKU</th>
+              <th>Saldo</th>
+              <th>Mínimo</th>
+              <th class="col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.product.id) {
+              <tr>
+                <td>
+                  {{ row.product.name }}
+                  @if (!row.product.is_active) {
+                    <span class="badge badge--danger">Inactivo</span>
+                  }
+                </td>
+                <td class="text-muted">{{ row.product.sku }}</td>
+                <td>
+                  <strong>{{ formatQuantity(row.quantity) }}</strong> {{ row.unit?.abbreviation }}
+                  @if (row.low) {
+                    <span class="badge badge--warning">Bajo</span>
+                  }
+                </td>
+                <td class="text-muted">{{ row.product.min_stock }}</td>
+                <td class="col-actions">
+                  @if (canEnter() && canWriteHere()) {
+                    <button type="button" class="btn btn--outline" (click)="open('entrada', row.product)">Entrada</button>
+                  }
+                  @if (isAdmin() && canWriteHere()) {
+                    <button type="button" class="btn btn--outline" (click)="open('merma', row.product)">Merma</button>
+                    <button type="button" class="btn btn--outline" (click)="open('ajuste', row.product)">Ajuste</button>
+                  }
+                  <button type="button" class="btn btn--icon" aria-label="Historial" title="Historial" (click)="showHistory(row.product)">
+                    <app-icon name="eye" />
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state"><p class="empty-state__title">No hay productos</p></div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (tab() === 'movimientos') {
+    <section class="card">
+      <div class="toolbar" style="gap: 8px">
+        <select class="select" aria-label="Producto" (change)="onMovementProduct($event)">
+          <option value="">Todos los productos</option>
+          @for (product of products(); track product.id) {
+            <option [value]="product.id" [selected]="product.id === movementProduct()">{{ product.name }}</option>
+          }
+        </select>
+        <select class="select" aria-label="Tipo" (change)="onMovementType($event)">
+          <option value="">Todos los tipos</option>
+          @for (type of movementTypes; track type) {
+            <option [value]="type" [selected]="type === movementType()">{{ movementLabels[type] }}</option>
+          }
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Producto</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (movement of movements(); track movement.id) {
+              <tr>
+                <td class="text-muted">{{ movement.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ productName(movement.product_id) }}</td>
+                <td><span class="badge">{{ movementLabels[movement.movement_type] }}</span></td>
+                <td>
+                  <strong [class.text-danger]="movement.quantity.startsWith('-')">
+                    {{ movement.quantity.startsWith('-') ? '' : '+' }}{{ formatQuantity(movement.quantity) }}
+                  </strong>
+                </td>
+                <td class="text-muted">
+                  {{ movement.reason || '—' }}
+                  @if (movement.sale_id) {
+                    · Venta #{{ movement.sale_id }}
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state"><p class="empty-state__title">Sin movimientos</p></div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (hasMore()) {
+        <div style="padding: 12px; text-align: center">
+          <button type="button" class="btn btn--outline" (click)="loadMore()">Ver más</button>
+        </div>
+      }
+    </section>
+  }
+
+  @if (tab() === 'inicial' && isAdmin()) {
+    <app-initial-stock-panel
+      [locationId]="locationId()!"
+      [canWrite]="canWriteHere()"
+      [products]="products()"
+      [units]="units()"
+      [levels]="levels()"
+      (saved)="initialSaved()"
+    />
+  }
+}
+
+<app-movement-modal
+  [state]="modal()"
+  [locationId]="locationId()"
+  [products]="products()"
+  [units]="units()"
+  [levels]="levels()"
+  (closed)="modal.set(null)"
+  (saved)="saved($event)"
+/>
