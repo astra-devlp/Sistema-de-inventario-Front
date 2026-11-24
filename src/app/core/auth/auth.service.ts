@@ -102,6 +102,19 @@ export class AuthService {
     });
   }
 
+  /** Recuperación: pide el código. La API responde lo mismo exista o no el correo. */
+  forgotPassword(email: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${API_URL}/users/password/forgot`, { email });
+  }
+
+  verifyResetCode(email: string, code: string): Observable<{ valid: boolean }> {
+    return this.http.post<{ valid: boolean }>(`${API_URL}/users/password/verify`, { email, code });
+  }
+
+  resetPassword(email: string, code: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${API_URL}/users/password/reset`, { email, code, new_password: newPassword });
+  }
+
   /** Consulta el plan de la empresa (`/companies/me`) y actualiza `planExpired`. Los errores no tumban la sesión. */
   refreshPlan(): Observable<void> {
     const user = this.current();

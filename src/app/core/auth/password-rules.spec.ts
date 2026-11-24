@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { lockedMessage, newPasswordError, waitLabel } from './password-rules';
+import { lockedMessage, newPasswordError, normalizeCode, resetPasswordError, waitLabel } from './password-rules';
 
 describe('password-rules', () => {
   it('valida la contraseña nueva como el back', () => {
@@ -25,5 +25,19 @@ describe('password-rules', () => {
     );
     const wrong = new HttpErrorResponse({ status: 401, error: { detail: 'Correo o contraseña incorrectos' } });
     expect(lockedMessage(wrong, 'No se pudo iniciar sesión')).toContain('Correo o contraseña incorrectos');
+  });
+});
+
+describe('recuperación', () => {
+  it('el código son 6 dígitos, aunque se pegue con espacios', () => {
+    expect(normalizeCode(' 123 456 ')).toBe('123456');
+    expect(normalizeCode('12345')).toBeNull();
+    expect(normalizeCode('12a456')).toBeNull();
+  });
+
+  it('la contraseña nueva de la recuperación sigue las reglas del back', () => {
+    expect(resetPasswordError('corta', 'corta')).toContain('al menos 8');
+    expect(resetPasswordError('Nueva-Clave-1', 'Otra-Clave-1')).toContain('no coincide');
+    expect(resetPasswordError('Nueva-Clave-1', 'Nueva-Clave-1')).toBeNull();
   });
 });

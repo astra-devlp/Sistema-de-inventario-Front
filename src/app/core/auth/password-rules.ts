@@ -29,3 +29,17 @@ export function lockedMessage(error: unknown, fallback: string): string {
   }
   return httpErrorMessage(error, fallback);
 }
+
+/** El código de recuperación son exactamente 6 dígitos (se aceptan espacios al pegarlo). */
+export function normalizeCode(raw: string): string | null {
+  const code = raw.replace(/\s+/g, '');
+  return /^\d{6}$/.test(code) ? code : null;
+}
+
+/** Valida la contraseña nueva de la recuperación (no hay actual que comparar). */
+export function resetPasswordError(next: string, confirm: string): string | null {
+  if (next.length < MIN_PASSWORD) return `La contraseña nueva debe tener al menos ${MIN_PASSWORD} caracteres`;
+  if (next.length > MAX_PASSWORD) return `La contraseña nueva admite como máximo ${MAX_PASSWORD} caracteres`;
+  if (next !== confirm) return 'La confirmación no coincide con la contraseña nueva';
+  return null;
+}

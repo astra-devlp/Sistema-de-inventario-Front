@@ -16,6 +16,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login-page').then((m) => m.LoginPage),
   },
   {
+    path: 'recuperar',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/auth/recover-page').then((m) => m.RecoverPage),
+  },
+  {
     path: 'plan-vencido',
     canActivate: [planExpiredGuard],
     loadComponent: () => import('./features/plan/plan-expired-page').then((m) => m.PlanExpiredPage),
