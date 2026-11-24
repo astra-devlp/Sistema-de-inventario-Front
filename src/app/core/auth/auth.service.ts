@@ -6,7 +6,7 @@ import { SKIP_SESSION_REDIRECT } from '@core/api/http-context';
 import { Company } from '@core/company/company.model';
 import { CompanyService } from '@core/company/company.service';
 import { AuthUser, LoginResponse, PLATFORM_ROLE, UserRole, homePathForRole } from './auth.model';
-import { clearToken, purgeLegacyStorage, readToken, saveToken } from './token-storage';
+import { purgeLegacyStorage } from './session-cookies';
 
 export { httpErrorMessage } from '@core/api/api-error';
 
@@ -14,9 +14,8 @@ export { httpErrorMessage } from '@core/api/api-error';
 export const PLAN_EXPIRED_PATH = '/plan-vencido';
 
 /**
- * La API entrega un JWT en el login y lo espera en `Authorization: Bearer` (lo agrega el interceptor).
- * El token vive en sessionStorage (ver `token-storage.ts`); aquí queda en memoria el usuario actual,
- * que se pide a `/users/me` al abrir la app.
+ * La sesión va en la cookie HttpOnly que pone la API en el login (ver `session-cookies.ts`): el front nunca ve ni
+ * guarda el token. Aquí queda en memoria el usuario actual, que se pide a `/users/me` al abrir la app.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -32,10 +31,9 @@ export class AuthService {
   /** La empresa tiene el plan vencido: la sesión sigue válida, pero no se puede operar. */
   readonly planExpired = this.planExpiredFlag.asReadonly();
 
-  /** Recupera la sesión desde el token guardado. La llama el inicializador de la app antes de enrutar. */
+  /** Recupera la sesión desde la cookie (si la hay). La llama el inicializador de la app antes de enrutar. */
   restore(): Promise<void> {
     purgeLegacyStorage();
-    if (!readToken()) return Promise.resolve();
 
     const me$ = this.http
       .get<AuthUser>(`${API_URL}/users/me`, {
@@ -50,11 +48,8 @@ export class AuthService {
               ? timer(3000)
               : throwError(() => error),
         }),
-        catchError((error: unknown) => {
-          // Solo el 401 invalida el token; con la API caída se conserva para reintentar.
-          if (error instanceof HttpErrorResponse && error.status === 401) clearToken();
-          return of(null);
-        }),
+        // Sin sesión (401) o con la API caída: se arranca sin usuario; la cookie, si sirve, sigue en el navegador.
+        catchError(() => of(null)),
         tap((user) => this.current.set(user)),
         switchMap((user) => (user ? this.refreshPlan() : of(undefined))),
       );
@@ -93,10 +88,7 @@ export class AuthService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${API_URL}/users/login`, { email, password }).pipe(
-      tap((response) => {
-        saveToken(response.access_token);
-        this.current.set(response.user);
-      }),
+      tap((response) => this.current.set(response.user)),
       // El login funciona con el plan vencido: se pregunta aparte para mandar a la pantalla de renovación.
       switchMap((response) => this.refreshPlan().pipe(map(() => response))),
     );
@@ -129,14 +121,16 @@ export class AuthService {
     this.planExpiredFlag.set(expired);
   }
 
-  /** Cierra la sesión: la API no guarda estado de sesión, basta con olvidar el token. */
+  /** Cierra la sesión: la API borra las cookies (el JavaScript no puede) y la app olvida al usuario. */
   logout(): void {
+    this.http
+      .post(`${API_URL}/users/logout`, null, { context: new HttpContext().set(SKIP_SESSION_REDIRECT, true) })
+      .subscribe({ error: () => undefined });
     this.clearSession();
   }
 
-  /** Olvida el token y el usuario en la app (por ejemplo, porque la API respondió 401). */
+  /** Olvida el usuario en la app (por ejemplo, porque la API respondió 401). */
   clearSession(): void {
-    clearToken();
     this.current.set(null);
     this.currentCompany.set(null);
     this.planExpiredFlag.set(false);

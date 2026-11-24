@@ -6,10 +6,13 @@ import { isPlanExpired } from '@core/api/api-error';
 import { API_URL } from '@core/api/api-url';
 import { SKIP_SESSION_REDIRECT } from '@core/api/http-context';
 import { AuthService, PLAN_EXPIRED_PATH } from './auth.service';
-import { readToken } from './token-storage';
+import { CSRF_HEADER, readCsrfToken } from './session-cookies';
+
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
- * Agrega `Authorization: Bearer` a las peticiones a nuestra API (nunca a otras URL) y decide qué hacer con los errores:
+ * Manda la cookie de sesión HttpOnly a nuestra API (`withCredentials`, nunca a otras URL) y, en las escrituras,
+ * repite el token CSRF en `X-CSRF-Token`. Decide además qué hacer con los errores:
  * - 401: sesión vencida o token inválido → se limpia y se vuelve al login. Es el único que cierra sesión.
  * - 403 con `detail.code === 'plan_vencido'`: la sesión sigue válida → pantalla de renovación del plan.
  * - cualquier otro 403 (rol insuficiente, autorización no válida): no toca la sesión; cada pantalla muestra el detalle.
@@ -20,8 +23,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const isLogin = req.url === `${API_URL}/users/login`;
-  const token = isLogin ? null : readToken();
-  const apiReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  const csrf = !isLogin && UNSAFE_METHODS.has(req.method) ? readCsrfToken() : null;
+  const apiReq = req.clone({ withCredentials: true, ...(csrf ? { setHeaders: { [CSRF_HEADER]: csrf } } : {}) });
 
   return next(apiReq).pipe(
     catchError((error: unknown) => {

@@ -26,9 +26,13 @@ Su contrato está en `docs/multiempresa.md` del back, sección «pendiente del f
 
 ## Sesión
 
-El token (JWT) se guarda solo en **`sessionStorage`**, nunca en `localStorage`; lo envía `authInterceptor` como
-`Authorization: Bearer` y solo a nuestra API. No hay cookies ni CSRF. El token y las rutas de errores están en
-`src/app/core/auth/` y `src/app/core/api/`.
+La sesión va en la cookie HttpOnly `inventario_session` que pone la API en el login: el front nunca ve ni guarda
+el token (un XSS no puede robarlo). `authInterceptor` manda las peticiones a nuestra API con `withCredentials` y, en
+las escrituras, repite el valor de la cookie `inventario_csrf` en la cabecera `X-CSRF-Token` (protección CSRF de
+doble envío). Funciona porque el front llega a la API por el mismo sitio (proxy `/api`). El logout llama a
+`POST /users/logout`, que borra las cookies. Ver `src/app/core/auth/session-cookies.ts`.
+**Nunca** guardes el token en `sessionStorage` ni `localStorage`, ni quites la cabecera CSRF. Las rutas de errores
+están en `src/app/core/api/`.
 
 ## Probar contra el back local
 

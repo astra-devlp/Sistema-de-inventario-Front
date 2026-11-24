@@ -7,7 +7,6 @@ import { HttpContext } from '@angular/common/http';
 import { AuthUser } from './auth.model';
 import { authInterceptor } from './auth.interceptor';
 import { AuthService } from './auth.service';
-import { readToken, saveToken } from './token-storage';
 
 const user: AuthUser = {
   id: 1,
@@ -44,37 +43,49 @@ describe('authInterceptor', () => {
     router = TestBed.inject(Router);
     auth = TestBed.inject(AuthService);
     auth.setUser(user);
-    saveToken('token-de-prueba');
+    document.cookie = 'inventario_csrf=csrf-de-prueba; path=/';
   });
 
   afterEach(() => backend.verify());
 
-  it('agrega Authorization: Bearer a las peticiones a la API', () => {
+  it('manda la cookie de sesión a la API y nunca un Authorization', () => {
     http.get('/api/products').subscribe();
     const req = backend.expectOne('/api/products');
-    expect(req.request.headers.get('Authorization')).toBe('Bearer token-de-prueba');
+    expect(req.request.withCredentials).toBe(true);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    expect(req.request.headers.has('X-CSRF-Token')).toBe(false); // una lectura no lleva CSRF
     req.flush([]);
   });
 
-  it('no manda el token a otras URL', () => {
-    http.get('https://otro-sitio.com/datos').subscribe();
+  it('las escrituras a la API repiten el token CSRF en su cabecera', () => {
+    for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+      http.request(method, '/api/stock/entries', { body: {} }).subscribe();
+      const req = backend.expectOne((r) => r.method === method);
+      expect(req.request.headers.get('X-CSRF-Token')).toBe('csrf-de-prueba');
+      req.flush({});
+    }
+  });
+
+  it('no manda credenciales ni CSRF a otras URL', () => {
+    http.post('https://otro-sitio.com/datos', {}).subscribe();
     const req = backend.expectOne('https://otro-sitio.com/datos');
-    expect(req.request.headers.has('Authorization')).toBe(false);
+    expect(req.request.withCredentials).toBe(false);
+    expect(req.request.headers.has('X-CSRF-Token')).toBe(false);
     req.flush({});
   });
 
-  it('no manda el token en el login', () => {
+  it('el login va con credenciales (recibe las cookies) y sin CSRF', () => {
     http.post('/api/users/login', {}).subscribe({ error: () => undefined });
     const req = backend.expectOne('/api/users/login');
-    expect(req.request.headers.has('Authorization')).toBe(false);
+    expect(req.request.withCredentials).toBe(true);
+    expect(req.request.headers.has('X-CSRF-Token')).toBe(false);
     req.flush({ detail: 'Correo o contraseña incorrectos' }, { status: 401, statusText: 'Unauthorized' });
-    expect(readToken()).toBe('token-de-prueba');
+    expect(auth.isLoggedIn()).toBe(true); // un login fallido no cierra la sesión vigente
   });
 
   it('un 401 cierra la sesión y manda al login con aviso de sesión vencida', async () => {
     http.get('/api/products').subscribe({ error: () => undefined });
     backend.expectOne('/api/products').flush({ detail: 'Token inválido' }, { status: 401, statusText: 'Unauthorized' });
-    expect(readToken()).toBeNull();
     expect(auth.isLoggedIn()).toBe(false);
     await vi.waitFor(() => expect(router.url).toBe('/login?expired=1'));
   });
@@ -83,16 +94,14 @@ describe('authInterceptor', () => {
     const context = new HttpContext().set(SKIP_SESSION_REDIRECT, true);
     http.get('/api/users/me', { context }).subscribe({ error: () => undefined });
     backend.expectOne('/api/users/me').flush({}, { status: 401, statusText: 'Unauthorized' });
-    expect(readToken()).toBe('token-de-prueba');
     expect(auth.isLoggedIn()).toBe(true);
   });
 
-  it('un 403 de autorización no es sesión vencida: conserva el token y no navega', () => {
+  it('un 403 de autorización no es sesión vencida: conserva la sesión y no navega', () => {
     http.post('/api/sales/1/void', {}).subscribe({ error: () => undefined });
     backend
       .expectOne('/api/sales/1/void')
       .flush({ detail: 'Autorización no válida' }, { status: 403, statusText: 'Forbidden' });
-    expect(readToken()).toBe('token-de-prueba');
     expect(auth.isLoggedIn()).toBe(true);
     expect(auth.planExpired()).toBe(false);
     expect(router.url).toBe('/');
@@ -106,7 +115,6 @@ describe('authInterceptor', () => {
         { detail: { code: 'plan_vencido', message: 'El plan de la empresa venció' } },
         { status: 403, statusText: 'Forbidden' },
       );
-    expect(readToken()).toBe('token-de-prueba');
     expect(auth.isLoggedIn()).toBe(true);
     expect(auth.planExpired()).toBe(true);
     await vi.waitFor(() => expect(router.url).toBe('/plan-vencido'));
@@ -117,7 +125,6 @@ describe('authInterceptor', () => {
       http.post('/api/sales', {}).subscribe({ error: () => undefined });
       backend.expectOne('/api/sales').flush({ detail: 'x' }, { status, statusText: 'Error' });
     }
-    expect(readToken()).toBe('token-de-prueba');
     expect(auth.isLoggedIn()).toBe(true);
   });
 });

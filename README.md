@@ -104,5 +104,8 @@ puras (`*-rules.ts`) con su `.spec.ts`, sus rutas y su entrada de navegación.
 
 ## Sesión
 
-El JWT vive solo en `sessionStorage`; `authInterceptor` lo envía como `Authorization: Bearer` y únicamente a nuestra
-API. No hay cookies ni CSRF.
+La sesión va en la cookie HttpOnly `inventario_session` que pone la API en el login: el front nunca ve ni guarda
+el token (un XSS no puede robarlo). `authInterceptor` manda las peticiones a nuestra API con `withCredentials` y, en
+las escrituras, repite el valor de la cookie `inventario_csrf` en la cabecera `X-CSRF-Token` (protección CSRF de
+doble envío). Funciona porque el front llega a la API por el mismo sitio (proxy `/api`). El logout llama a
+`POST /users/logout`, que borra las cookies. Ver `src/app/core/auth/session-cookies.ts`.

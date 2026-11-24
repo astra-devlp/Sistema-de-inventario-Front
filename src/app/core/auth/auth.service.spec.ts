@@ -6,7 +6,6 @@ import { Company } from '@core/company/company.model';
 import { authInterceptor } from './auth.interceptor';
 import { AuthUser, LoginResponse } from './auth.model';
 import { AuthService } from './auth.service';
-import { readToken, saveToken } from './token-storage';
 
 const user: AuthUser = {
   id: 1,
@@ -64,11 +63,11 @@ describe('AuthService', () => {
   afterEach(() => backend.verify());
 
   describe('login', () => {
-    it('guarda el token en sessionStorage, fija el usuario y consulta el plan', () => {
+    it('no guarda el token en el navegador, fija el usuario y consulta el plan', () => {
       let done = false;
       auth.login('cajero@demo.co', 'Demo-12345-abc').subscribe(() => (done = true));
       backend.expectOne('/api/users/login').flush(loginResponse(user));
-      expect(readToken()).toBe('jwt-de-prueba');
+      expect(sessionStorage.length + localStorage.length).toBe(0); // la sesión va en la cookie HttpOnly
       expect(auth.user()?.email).toBe('cajero@demo.co');
       backend.expectOne('/api/companies/me').flush(company(false));
       expect(done).toBe(true);
@@ -91,14 +90,13 @@ describe('AuthService', () => {
       expect(auth.planExpired()).toBe(false);
     });
 
-    it('con credenciales incorrectas no guarda token ni deja sesión', () => {
+    it('con credenciales incorrectas no deja sesión', () => {
       let message = '';
       auth.login('x@y.co', 'mala').subscribe({ error: (e) => (message = e.error.detail) });
       backend
         .expectOne('/api/users/login')
         .flush({ detail: 'Correo o contraseña incorrectos' }, { status: 401, statusText: 'Unauthorized' });
       expect(message).toBe('Correo o contraseña incorrectos');
-      expect(readToken()).toBeNull();
       expect(auth.isLoggedIn()).toBe(false);
     });
 
@@ -113,17 +111,10 @@ describe('AuthService', () => {
   });
 
   describe('restore', () => {
-    it('sin token no llama a la API', async () => {
-      await auth.restore();
-      backend.expectNone('/api/users/me');
-      expect(auth.isLoggedIn()).toBe(false);
-    });
-
-    it('con token válido recupera el usuario y revisa el plan', async () => {
-      saveToken('jwt-guardado');
+    it('pregunta a la API con la cookie y recupera el usuario y el plan', async () => {
       const restored = auth.restore();
       const me = backend.expectOne('/api/users/me');
-      expect(me.request.headers.get('Authorization')).toBe('Bearer jwt-guardado');
+      expect(me.request.withCredentials).toBe(true);
       me.flush(user);
       backend.expectOne('/api/companies/me').flush(company(true));
       await restored;
@@ -131,39 +122,46 @@ describe('AuthService', () => {
       expect(auth.planExpired()).toBe(true);
     });
 
-    it('con un 401 borra el token y no deja sesión', async () => {
-      saveToken('jwt-vencido');
+    it('sin sesión (401) no deja usuario ni navega', async () => {
       const restored = auth.restore();
-      backend.expectOne('/api/users/me').flush({ detail: 'Token inválido' }, { status: 401, statusText: 'Unauthorized' });
+      backend.expectOne('/api/users/me').flush({ detail: 'No autenticado' }, { status: 401, statusText: 'Unauthorized' });
       await restored;
-      expect(readToken()).toBeNull();
       expect(auth.isLoggedIn()).toBe(false);
     });
 
-    it('con la API caída conserva el token para reintentar', async () => {
-      saveToken('jwt-guardado');
+    it('con la API caída no deja sesión, sin romper nada', async () => {
       const restored = auth.restore();
       backend.expectOne('/api/users/me').flush({}, { status: 500, statusText: 'Error' });
       await restored;
-      expect(readToken()).toBe('jwt-guardado');
       expect(auth.isLoggedIn()).toBe(false);
     });
 
-    it('borra de localStorage el token de versiones anteriores', async () => {
+    it('borra el token que guardaban versiones anteriores', async () => {
       localStorage.setItem('inventario.token', 'viejo');
-      await auth.restore();
+      sessionStorage.setItem('inventario.token', 'jwt-viejo');
+      const restored = auth.restore();
+      backend.expectOne('/api/users/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+      await restored;
       expect(localStorage.getItem('inventario.token')).toBeNull();
+      expect(sessionStorage.getItem('inventario.token')).toBeNull();
     });
   });
 
   describe('logout', () => {
-    it('olvida el token y el usuario sin llamar a la API', () => {
-      saveToken('jwt');
+    it('pide a la API borrar las cookies y olvida el usuario', () => {
       auth.setUser(user);
       auth.logout();
-      expect(readToken()).toBeNull();
       expect(auth.isLoggedIn()).toBe(false);
-      backend.expectNone('/api/users/logout');
+      const req = backend.expectOne('/api/users/logout');
+      expect(req.request.method).toBe('POST');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('si el logout falla, igual queda fuera de sesión en la app', () => {
+      auth.setUser(user);
+      auth.logout();
+      backend.expectOne('/api/users/logout').flush({}, { status: 500, statusText: 'Error' });
+      expect(auth.isLoggedIn()).toBe(false);
     });
   });
 });
