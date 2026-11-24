@@ -195,23 +195,8 @@
             <input id="acc-role" class="input" type="text" [value]="user() ? roleLabel(user()!.role) : '—'" disabled />
           </div>
 
-          @if (canEdit()) {
-            <div class="field field--full account-grid__divider">
-              <label class="label" for="acc-password">Nueva contraseña</label>
-              <input
-                id="acc-password"
-                class="input"
-                type="password"
-                formControlName="password"
-                autocomplete="new-password"
-                placeholder="Déjala vacía para no cambiarla"
-              />
-              <span class="hint">Mínimo 8 caracteres.</span>
-            </div>
-          } @else {
-            <p class="hint field--full">
-              Solo un Administrador de la empresa puede cambiar estos datos, incluida la contraseña.
-            </p>
+          @if (!canEdit()) {
+            <p class="hint field--full">Solo un Administrador de la empresa puede cambiar estos datos.</p>
           }
         </div>
 
@@ -222,6 +207,44 @@
             </button>
           </div>
         }
+      </form>
+    </article>
+
+    <article class="acc-panel">
+      <div class="acc-panel__head">
+        <div>
+          <p class="acc-panel__eyebrow">Seguridad</p>
+          <h2 class="acc-panel__title">Cambiar contraseña</h2>
+          <p class="acc-panel__sub">Para confirmar que eres tú, escribe primero la contraseña actual.</p>
+        </div>
+      </div>
+      <form [formGroup]="passwordForm" (submit)="$event.preventDefault(); submitPassword()">
+        <div class="acc-panel__body form-grid account-grid">
+          @if (passwordError()) {
+            <p class="auth-error field--full" role="alert">{{ passwordError() }}</p>
+          }
+          @if (passwordSuccess()) {
+            <p class="acc-toast field--full" role="status">{{ passwordSuccess() }}</p>
+          }
+          <div class="field field--full">
+            <label class="label" for="pw-current">Contraseña actual <span class="required">*</span></label>
+            <input id="pw-current" class="input" type="password" formControlName="current" autocomplete="current-password" />
+          </div>
+          <div class="field">
+            <label class="label" for="pw-next">Contraseña nueva <span class="required">*</span></label>
+            <input id="pw-next" class="input" type="password" formControlName="next" autocomplete="new-password" />
+            <span class="hint">De 8 a 128 caracteres, distinta de la actual.</span>
+          </div>
+          <div class="field">
+            <label class="label" for="pw-confirm">Repite la contraseña nueva <span class="required">*</span></label>
+            <input id="pw-confirm" class="input" type="password" formControlName="confirm" autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="acc-panel__foot">
+          <button type="submit" class="btn btn--primary" [disabled]="changingPassword()">
+            {{ changingPassword() ? 'Cambiando…' : 'Cambiar contraseña' }}
+          </button>
+        </div>
       </form>
     </article>
   </div>

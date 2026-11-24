@@ -1,8 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { httpErrorMessage, AuthService } from '@core/auth/auth.service';
+import { AuthService } from '@core/auth/auth.service';
 import { ThemeService } from '@core/theme/theme.service';
+import { lockedMessage } from '@core/auth/password-rules';
 
 @Component({
   selector: 'app-login-page',
@@ -48,7 +49,7 @@ export class LoginPage {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(httpErrorMessage(err, 'No se pudo iniciar sesión'));
+        this.error.set(lockedMessage(err, 'No se pudo iniciar sesión'));
       },
     });
   }

@@ -94,6 +94,14 @@ export class AuthService {
     );
   }
 
+  /** Cambia la propia contraseña (`POST /users/me/password`). Una actual equivocada es 403: no cierra la sesión. */
+  changeOwnPassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${API_URL}/users/me/password`, {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  }
+
   /** Consulta el plan de la empresa (`/companies/me`) y actualiza `planExpired`. Los errores no tumban la sesión. */
   refreshPlan(): Observable<void> {
     const user = this.current();

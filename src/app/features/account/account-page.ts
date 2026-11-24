@@ -5,6 +5,7 @@ import { AuthService, httpErrorMessage } from '@core/auth/auth.service';
 import { CompanyService } from '@core/company/company.service';
 import { validReturnWindow } from '@features/locations/location-rules';
 import { UsersApi } from '@features/users/users.api';
+import { lockedMessage, newPasswordError } from '@core/auth/password-rules';
 
 /** Teléfono opcional: vacío o 9–10 dígitos. */
 const OPTIONAL_PHONE = /^\s*(?:(?:[\s.\-()]*\d){9,10}[\s.\-()]*)?$/;
@@ -38,7 +39,6 @@ export class AccountPage {
     name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     phone: new FormControl('', { nonNullable: true, validators: [Validators.pattern(OPTIONAL_PHONE)] }),
-    password: new FormControl('', { nonNullable: true }),
   });
 
   protected readonly companyForm = new FormGroup({
@@ -53,7 +53,7 @@ export class AccountPage {
     effect(() => {
       const user = this.user();
       if (!user) return;
-      this.profileForm.patchValue({ name: user.name, email: user.email, phone: user.phone ?? '', password: '' });
+      this.profileForm.patchValue({ name: user.name, email: user.email, phone: user.phone ?? '' });
       if (this.canEdit()) this.profileForm.enable({ emitEvent: false });
       else this.profileForm.disable({ emitEvent: false });
     });
@@ -95,28 +95,53 @@ export class AccountPage {
       return;
     }
     const raw = form.getRawValue();
-    const password = raw.password.trim();
-    if (password && password.length < 8) {
-      this.error.set('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-
-    const payload: { name: string; email: string; phone: string | null; password?: string } = {
+    const payload: { name: string; email: string; phone: string | null } = {
       name: raw.name.trim(),
       email: raw.email.trim(),
       phone: raw.phone.trim() || null,
     };
-    if (password) payload.password = password;
 
     this.begin();
     this.api.update(user.id, payload).subscribe({
       next: (updated) => {
         this.auth.setUser(updated);
-        form.patchValue({ password: '' });
         this.submitting.set(false);
-        this.success.set(password ? 'Cuenta y contraseña actualizadas.' : 'Cuenta actualizada.');
+        this.success.set('Cuenta actualizada.');
       },
       error: (err: unknown) => this.fail(err, 'No se pudo guardar la cuenta'),
+    });
+  }
+
+  /** Cambiar la propia contraseña: cualquier rol, también con el plan vencido. Pide la actual. */
+  protected readonly passwordForm = new FormGroup({
+    current: new FormControl('', { nonNullable: true }),
+    next: new FormControl('', { nonNullable: true }),
+    confirm: new FormControl('', { nonNullable: true }),
+  });
+  protected readonly passwordError = signal<string | null>(null);
+  protected readonly passwordSuccess = signal<string | null>(null);
+  protected readonly changingPassword = signal(false);
+
+  protected submitPassword(): void {
+    const { current, next, confirm } = this.passwordForm.getRawValue();
+    this.passwordSuccess.set(null);
+    const problem = newPasswordError(current, next, confirm);
+    if (problem) {
+      this.passwordError.set(problem);
+      return;
+    }
+    this.passwordError.set(null);
+    this.changingPassword.set(true);
+    this.auth.changeOwnPassword(current, next).subscribe({
+      next: () => {
+        this.changingPassword.set(false);
+        this.passwordForm.reset({ current: '', next: '', confirm: '' });
+        this.passwordSuccess.set('Contraseña actualizada. Úsala la próxima vez que inicies sesión.');
+      },
+      error: (err: unknown) => {
+        this.changingPassword.set(false);
+        this.passwordError.set(lockedMessage(err, 'No se pudo cambiar la contraseña'));
+      },
     });
   }
 
