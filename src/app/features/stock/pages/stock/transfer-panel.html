@@ -1,0 +1,85 @@
+<section class="card" style="margin-bottom: 16px">
+  <h2 class="card__title" style="margin-bottom: 12px">Trasladar a otra sede</h2>
+  @if (!canWrite()) {
+    <p class="hint">Esta sede está inactiva: no puede enviar traslados.</p>
+  } @else if (destinations().length === 0) {
+    <p class="hint">No hay otra sede activa a la cual trasladar.</p>
+  } @else {
+    <form class="form-grid" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+      @for (message of errors(); track message) {
+        <p class="auth-error field--full">{{ message }}</p>
+      }
+      <div class="field">
+        <label class="label" for="tr-product">Producto <span class="required">*</span></label>
+        <select id="tr-product" class="select" formControlName="productId">
+          <option [ngValue]="null">Elige un producto</option>
+          @for (product of activeProducts(); track product.id) {
+            <option [ngValue]="product.id">{{ product.name }} ({{ product.sku }})</option>
+          }
+        </select>
+        <span class="hint">Disponible en esta sede: {{ formatQuantity(available()) }}</span>
+      </div>
+      <div class="field">
+        <label class="label" for="tr-destination">Sede de destino <span class="required">*</span></label>
+        <select id="tr-destination" class="select" formControlName="toLocationId">
+          <option [ngValue]="null">Elige la sede</option>
+          @for (location of destinations(); track location.id) {
+            <option [ngValue]="location.id">{{ location.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="tr-quantity">Cantidad <span class="required">*</span></label>
+        <input id="tr-quantity" class="input" type="text" inputmode="decimal" formControlName="quantity" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label class="label" for="tr-reason">Motivo</label>
+        <input id="tr-reason" class="input" type="text" formControlName="reason" maxlength="500" autocomplete="off" />
+      </div>
+      <div class="field field--full">
+        <button type="submit" class="btn btn--primary" [disabled]="submitting()">
+          {{ submitting() ? 'Trasladando…' : 'Trasladar' }}
+        </button>
+        <span class="hint">Sale al costo promedio de esta sede y entra con ese costo a la de destino.</span>
+      </div>
+    </form>
+  }
+</section>
+
+<section class="card">
+  <h2 class="card__title" style="margin-bottom: 12px">Traslados de esta sede</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Desde</th>
+          <th>Hacia</th>
+          <th>Cantidad</th>
+          <th>Costo</th>
+          <th>Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (transfer of history(); track transfer.id) {
+          <tr>
+            <td class="text-muted">{{ transfer.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ productName(transfer.product_id) }}</td>
+            <td>{{ locationName(transfer.from_location_id) }}</td>
+            <td>{{ locationName(transfer.to_location_id) }}</td>
+            <td><strong>{{ formatQuantity(transfer.quantity) }}</strong></td>
+            <td class="text-muted">{{ transfer.unit_cost ? formatCop(transfer.unit_cost) : '—' }}</td>
+            <td class="text-muted">{{ transfer.reason || '—' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state"><p class="empty-state__title">Sin traslados</p></div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

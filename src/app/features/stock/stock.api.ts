@@ -8,8 +8,13 @@ import {
   InitialStockPayload,
   LossPayload,
   MovementFilters,
+  StockAlert,
   StockLevel,
+  StockMinimum,
   StockMovement,
+  StockTransfer,
+  StockValuation,
+  TransferPayload,
 } from './stock.model';
 
 /** No hay PATCH ni DELETE: los movimientos son inmutables y un error se corrige con un ajuste. */
@@ -43,5 +48,34 @@ export class StockApi {
 
   initial(payload: InitialStockPayload): Observable<StockMovement[]> {
     return this.http.post<StockMovement[]>(`${API_URL}/stock/initial`, payload);
+  }
+
+  alerts(locationId: number): Observable<StockAlert[]> {
+    return this.http.get<StockAlert[]>(`${API_URL}/stock/alerts`, { params: new HttpParams().set('location_id', locationId) });
+  }
+
+  /** Mínimos propios de la sede. Viven bajo /locations porque /stock no admite PUT. */
+  minimums(locationId: number): Observable<StockMinimum[]> {
+    return this.http.get<StockMinimum[]>(`${API_URL}/locations/${locationId}/stock-minimums`);
+  }
+
+  setMinimum(locationId: number, productId: number, minQuantity: string): Observable<StockMinimum> {
+    return this.http.put<StockMinimum>(`${API_URL}/locations/${locationId}/stock-minimums/${productId}`, {
+      min_quantity: minQuantity,
+    });
+  }
+
+  valuation(locationId: number): Observable<StockValuation> {
+    return this.http.get<StockValuation>(`${API_URL}/stock/valuation`, { params: new HttpParams().set('location_id', locationId) });
+  }
+
+  transfers(locationId: number): Observable<StockTransfer[]> {
+    return this.http.get<StockTransfer[]>(`${API_URL}/stock/transfers`, {
+      params: new HttpParams().set('location_id', locationId).set('limit', 100),
+    });
+  }
+
+  transfer(payload: TransferPayload): Observable<StockTransfer> {
+    return this.http.post<StockTransfer>(`${API_URL}/stock/transfers`, payload);
   }
 }

@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Product, UnitRef } from '@features/products/products.model';
+import { parseMoney } from '@core/money/money';
 import { Modal } from '@shared/ui/modal/modal';
 import { formatQuantity, parseQuantity } from '../../quantity';
 import { StockApi } from '../../stock.api';
@@ -42,6 +43,7 @@ export class MovementModal {
 
   protected readonly form = new FormGroup({
     quantity: new FormControl('', { nonNullable: true }),
+    unitCost: new FormControl('', { nonNullable: true }),
     reason: new FormControl('', { nonNullable: true }),
   });
 
@@ -50,7 +52,7 @@ export class MovementModal {
       if (!this.state()) return;
       this.errors.set([]);
       this.submitting.set(false);
-      this.form.reset({ quantity: '', reason: '' });
+      this.form.reset({ quantity: '', unitCost: '', reason: '' });
     });
   }
 
@@ -65,6 +67,15 @@ export class MovementModal {
       this.errors.set([quantity.error]);
       return;
     }
+    let unitCost: string | null = null;
+    if (this.kind() === 'entrada' && raw.unitCost.trim()) {
+      const cost = parseMoney(raw.unitCost);
+      if (!cost.ok) {
+        this.errors.set([`Costo unitario: ${cost.error}`]);
+        return;
+      }
+      unitCost = cost.value;
+    }
     const reason = raw.reason.trim();
     if (this.reasonRequired() && !reason) {
       this.errors.set(['El motivo es obligatorio']);
@@ -78,7 +89,7 @@ export class MovementModal {
     const base = { location_id: locationId, product_id: product.id };
     const request =
       this.kind() === 'entrada'
-        ? this.api.entry({ ...base, quantity: quantity.value, reason: reason || null })
+        ? this.api.entry({ ...base, quantity: quantity.value, unit_cost: unitCost, reason: reason || null })
         : this.kind() === 'merma'
           ? this.api.loss({ ...base, quantity: quantity.value, reason })
           : this.api.adjustment({ ...base, counted_quantity: quantity.value, reason });

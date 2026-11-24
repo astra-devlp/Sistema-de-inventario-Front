@@ -26,6 +26,13 @@
         }
       </span>
     </div>
+    @if (kind() === 'entrada') {
+      <div class="field field--full">
+        <label class="label" for="mv-cost">Costo unitario</label>
+        <input id="mv-cost" class="input" type="text" inputmode="decimal" formControlName="unitCost" autocomplete="off" />
+        <span class="hint">Lo que costó cada unidad. Si lo dejas vacío se usa el costo del producto. Recalcula el costo promedio de la sede.</span>
+      </div>
+    }
     <div class="field field--full">
       <label class="label" for="mv-reason">
         Motivo
