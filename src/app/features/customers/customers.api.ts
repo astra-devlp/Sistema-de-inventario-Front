@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '@core/api/api-url';
+import { CustomerAccount, CustomerPayment, CustomerPaymentBody } from './customer-account.model';
 import { Customer, CustomerPayload, DocumentTypeOption } from './customers.model';
 
 @Injectable({ providedIn: 'root' })
@@ -33,5 +34,14 @@ export class CustomersApi {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${API_URL}/customers/${id}`);
+  }
+
+  account(id: number): Observable<CustomerAccount> {
+    return this.http.get<CustomerAccount>(`${API_URL}/customers/${id}/account`);
+  }
+
+  /** Abono a la deuda: exige turno abierto de quien lo recibe. 201 nuevo, 200 reintento con la misma clave. */
+  pay(id: number, idempotencyKey: string, body: CustomerPaymentBody): Observable<CustomerPayment> {
+    return this.http.post<CustomerPayment>(`${API_URL}/customers/${id}/payments`, { idempotency_key: idempotencyKey, ...body });
   }
 }

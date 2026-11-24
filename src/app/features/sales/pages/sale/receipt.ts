@@ -9,6 +9,7 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   efectivo: 'Efectivo',
   tarjeta: 'Tarjeta',
   transferencia: 'Transferencia',
+  credito: 'Crédito',
 };
 
 const DOCUMENT_LABELS: Record<string, string> = { comprobante_interno: 'Comprobante interno' };

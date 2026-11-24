@@ -38,6 +38,13 @@
       <input class="input" type="text" maxlength="100" autocomplete="off" placeholder="Referencia (opcional)"
         aria-label="Referencia de transferencia" [ngModel]="transferRef()" (ngModelChange)="transferRef.set($event)" />
     </div>
+
+    <div class="field">
+      <label class="label" for="ch-credit">A crédito (fiado)</label>
+      <input id="ch-credit" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$ 0"
+        [value]="display(credit())" (input)="typeMoney('credit', $event)" />
+      <span class="hint">Lo que el cliente queda debiendo. Elige el cliente abajo; los abonos se registran en Clientes.</span>
+    </div>
   </div>
 
   @if (problem()) {

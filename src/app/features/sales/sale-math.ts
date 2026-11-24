@@ -80,7 +80,10 @@ export function hasSellablePrice(priceWithTax: string | null | undefined): boole
 
 // ---- pagos ----------------------------------------------------------------------------------------------
 
-export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia';
+/** `credito`: lo que el cliente queda debiendo. Exige cliente y no es efectivo (no da cambio). */
+export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
+
+export const CREDIT_NEEDS_CUSTOMER = 'La venta a crédito necesita un cliente: elige a quién se le fía';
 
 export interface PaymentInput {
   method: PaymentMethod;
@@ -101,10 +104,11 @@ export type SettleResult =
   | { ok: false; error: string };
 
 /**
- * Reparto de los pagos sobre el total, como `settle_payments`: tarjeta y transferencia se aplican por su valor y
- * juntas no pueden superar el total; el efectivo cubre lo que falta y el resto es el vuelto.
+ * Reparto de los pagos sobre el total, como `settle_payments`: tarjeta, transferencia y crédito se aplican por su
+ * valor y juntas no pueden superar el total; el efectivo cubre lo que falta y el resto es el vuelto. A crédito,
+ * hace falta un cliente (el back responde 422 sin él).
  */
-export function settlePayments(total: string, payments: PaymentInput[]): SettleResult {
+export function settlePayments(total: string, payments: PaymentInput[], options: { hasCustomer?: boolean } = {}): SettleResult {
   const totalCents = moneyToCents(total);
   const methods = payments.map((p) => p.method);
   if (new Set(methods).size !== methods.length) return { ok: false, error: 'Cada medio de pago puede venir una sola vez' };
@@ -120,10 +124,19 @@ export function settlePayments(total: string, payments: PaymentInput[]): SettleR
     amounts.set(payment.method, cents);
   }
 
+  if (amounts.has('credito') && !options.hasCustomer) return { ok: false, error: CREDIT_NEEDS_CUSTOMER };
+
   const card = amounts.get('tarjeta') ?? 0n;
   const transfer = amounts.get('transferencia') ?? 0n;
+  const credit = amounts.get('credito') ?? 0n;
   const cash = amounts.get('efectivo');
-  const nonCash = card + transfer;
+  const nonCash = card + transfer + credit;
+  if (nonCash > totalCents && credit > 0n) {
+    return {
+      ok: false,
+      error: `Tarjeta, transferencia y crédito suman ${centsToMoney(nonCash)} y superan el total de la venta (${centsToMoney(totalCents)})`,
+    };
+  }
   if (nonCash > totalCents) {
     return {
       ok: false,
@@ -134,6 +147,7 @@ export function settlePayments(total: string, payments: PaymentInput[]): SettleR
   const applied: AppliedPayment[] = [];
   if (amounts.has('tarjeta')) applied.push({ method: 'tarjeta', amount: centsToMoney(card), received: null });
   if (amounts.has('transferencia')) applied.push({ method: 'transferencia', amount: centsToMoney(transfer), received: null });
+  if (amounts.has('credito')) applied.push({ method: 'credito', amount: centsToMoney(credit), received: null });
 
   if (cash === undefined) {
     if (remaining > 0n) return { ok: false, error: `Los pagos no cubren el total de la venta: faltan ${centsToMoney(remaining)}` };

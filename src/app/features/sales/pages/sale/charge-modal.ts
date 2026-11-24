@@ -43,6 +43,8 @@ export class ChargeModal {
   protected readonly cash = signal('');
   protected readonly card = signal('');
   protected readonly transfer = signal('');
+  /** Lo que queda fiado al cliente (venta a crédito). */
+  protected readonly credit = signal('');
   protected readonly cardRef = signal('');
   protected readonly transferRef = signal('');
 
@@ -64,6 +66,7 @@ export class ChargeModal {
       ['efectivo', this.cash()],
       ['tarjeta', this.card()],
       ['transferencia', this.transfer()],
+      ['credito', this.credit()],
     ] as [PaymentMethod, string][]) {
       if (raw === '') continue;
       const parsed = parseMoney(raw);
@@ -73,7 +76,9 @@ export class ChargeModal {
   });
 
   protected readonly entered = computed(() => this.payments().length > 0);
-  protected readonly settle = computed(() => settlePayments(this.total(), this.payments()));
+  protected readonly settle = computed(() =>
+    settlePayments(this.total(), this.payments(), { hasCustomer: this.customer() !== null }),
+  );
   protected readonly problem = computed(() => {
     const result = this.settle();
     return this.entered() && !result.ok ? result.error : null;
@@ -98,6 +103,7 @@ export class ChargeModal {
     this.cash.set('');
     this.card.set('');
     this.transfer.set('');
+    this.credit.set('');
     this.cardRef.set('');
     this.transferRef.set('');
     this.customer.set(null);
@@ -112,7 +118,7 @@ export class ChargeModal {
   }
 
   /** Formatea mientras se escribe (`50000` → `$ 50.000`) y guarda el valor limpio. */
-  protected typeMoney(target: 'cash' | 'card' | 'transfer', event: Event): void {
+  protected typeMoney(target: 'cash' | 'card' | 'transfer' | 'credit', event: Event): void {
     const input = event.target as HTMLInputElement;
     const clean = moneyInputValue(input.value);
     input.value = moneyInputDisplay(clean);
@@ -125,7 +131,7 @@ export class ChargeModal {
 
   /** «Exacto»: el efectivo cubre lo que falta tras tarjeta y transferencia. */
   protected exact(): void {
-    const others = [this.card(), this.transfer()].map((v) => parseMoney(v)).flatMap((r) => (r.ok ? [r.value] : []));
+    const others = [this.card(), this.transfer(), this.credit()].map((v) => parseMoney(v)).flatMap((r) => (r.ok ? [r.value] : []));
     const remaining = remainingForCash(this.total(), others);
     this.cash.set(remaining === '0.00' ? '' : remaining.replace(/\.00$/, ''));
   }

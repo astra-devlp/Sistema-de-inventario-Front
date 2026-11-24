@@ -6,12 +6,13 @@ import { PageHeader } from '@shared/ui/page-header/page-header';
 import { CustomersApi } from '../../customers.api';
 import { Customer, DOCUMENT_TYPES, DocumentTypeOption, formatDocument, groupDocumentTypes } from '../../customers.model';
 import { CustomerFormModal } from './modals/customer-form-modal';
+import { AccountModal } from './modals/account-modal';
 
 type CustomerModal = 'create' | 'edit' | 'delete' | null;
 
 @Component({
   selector: 'app-customers-page',
-  imports: [PageHeader, Icon, CustomerFormModal, ConfirmModal],
+  imports: [PageHeader, Icon, CustomerFormModal, ConfirmModal, AccountModal],
   templateUrl: './customers-page.html',
 })
 export class CustomersPage {
@@ -26,6 +27,8 @@ export class CustomersPage {
   protected readonly error = signal<string | null>(null);
   protected readonly modal = signal<CustomerModal>(null);
   protected readonly selected = signal<Customer | null>(null);
+  /** Cliente cuya cuenta de crédito se está viendo. */
+  protected readonly accountOf = signal<Customer | null>(null);
   protected readonly formatDocument = formatDocument;
 
   constructor() {

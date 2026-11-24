@@ -1,0 +1,97 @@
+<app-modal [open]="customer() !== null" [title]="'Cuenta de ' + (customer()?.name ?? '')" (closed)="closed.emit()">
+  @if (error()) {
+    <p class="auth-error" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="acc-toast" role="status">{{ success() }}</p>
+  }
+  @if (account(); as data) {
+    <p style="margin-bottom: 12px">
+      <span class="text-muted">Saldo pendiente:</span>
+      <strong>{{ formatCop(data.balance) }}</strong>
+    </p>
+
+    @if (data.balance !== '0.00') {
+      <form class="form-grid" style="margin-bottom: 16px" (submit)="$event.preventDefault(); pay()">
+        <div class="field">
+          <label class="label" for="ab-method">Medio</label>
+          <select id="ab-method" class="select" [ngModel]="method()" (ngModelChange)="method.set($event)" name="method">
+            @for (m of methods; track m) {
+              <option [value]="m">{{ methodLabels[m] }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="ab-amount">Abono <span class="required">*</span></label>
+          <input id="ab-amount" class="input" type="text" inputmode="decimal" autocomplete="off" name="amount"
+            [ngModel]="amount()" (ngModelChange)="amount.set($event)" />
+        </div>
+        @if (method() === 'efectivo') {
+          <div class="field">
+            <label class="label" for="ab-received">Recibido</label>
+            <input id="ab-received" class="input" type="text" inputmode="decimal" autocomplete="off" name="received"
+              placeholder="Igual al abono" [ngModel]="received()" (ngModelChange)="received.set($event)" />
+          </div>
+        }
+        <div class="field">
+          <label class="label" for="ab-note">Nota</label>
+          <input id="ab-note" class="input" type="text" maxlength="500" autocomplete="off" name="note"
+            [ngModel]="note()" (ngModelChange)="note.set($event)" />
+        </div>
+        <div class="field field--full">
+          <button type="submit" class="btn btn--primary" [disabled]="submitting()">
+            {{ submitting() ? 'Registrando…' : 'Registrar abono' }}
+          </button>
+          <span class="hint">Necesitas un turno abierto: el abono queda en tu turno y, en efectivo, suma al cierre.</span>
+        </div>
+      </form>
+    }
+
+    <h3 class="label" style="margin: 8px 0">Ventas a crédito</h3>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Fecha</th><th>Recibo</th><th>Fiado</th><th>Devuelto</th></tr>
+        </thead>
+        <tbody>
+          @for (sale of data.credit_sales; track sale.sale_id) {
+            <tr>
+              <td class="text-muted">{{ sale.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ sale.receipt_code }}</td>
+              <td>{{ formatCop(sale.credit) }}</td>
+              <td class="text-muted">{{ sale.refunded === '0.00' ? '—' : formatCop(sale.refunded) }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4"><div class="empty-state"><p class="empty-state__title">Sin ventas a crédito</p></div></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="label" style="margin: 16px 0 8px">Abonos</h3>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Fecha</th><th>Medio</th><th>Abono</th><th>Nota</th></tr>
+        </thead>
+        <tbody>
+          @for (payment of data.payments; track payment.id) {
+            <tr>
+              <td class="text-muted">{{ payment.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ methodLabels[payment.method] }}</td>
+              <td>{{ formatCop(payment.amount) }}</td>
+              <td class="text-muted">{{ payment.note || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4"><div class="empty-state"><p class="empty-state__title">Sin abonos</p></div></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!error()) {
+    <p class="text-muted">Cargando…</p>
+  }
+  <div modal-footer>
+    <button type="button" class="btn btn--outline" (click)="closed.emit()">Cerrar</button>
+  </div>
+</app-modal>

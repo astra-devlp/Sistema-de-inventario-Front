@@ -50,6 +50,7 @@
             <td class="text-muted">{{ customer.email || '—' }}</td>
             <td class="text-muted">{{ customer.phone || '—' }}</td>
             <td class="col-actions">
+              <button type="button" class="btn btn--outline" (click)="accountOf.set(customer)">Cuenta</button>
               <button type="button" class="btn btn--icon" aria-label="Editar" (click)="open('edit', customer)"><app-icon name="edit" /></button>
               <button type="button" class="btn btn--icon btn--danger-hover" aria-label="Eliminar" (click)="open('delete', customer)"><app-icon name="trash" /></button>
             </td>
@@ -82,3 +83,5 @@
   (closed)="close()"
   (confirmed)="remove()"
 />
+
+<app-account-modal [customer]="accountOf()" (closed)="accountOf.set(null)" />

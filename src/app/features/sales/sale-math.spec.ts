@@ -180,3 +180,39 @@ describe('remainingForCash («Exacto»)', () => {
     expect(remainingForCash('100.00', ['500'])).toBe('0.00');
   });
 });
+
+describe('settlePayments con crédito', () => {
+  const credit = (amount: string, ...rest: PaymentInput[]): PaymentInput[] => [{ method: 'credito', amount }, ...rest];
+
+  it('a crédito exige cliente', () => {
+    expect(settlePayments('1190.00', credit('1190'))).toEqual({
+      ok: false,
+      error: 'La venta a crédito necesita un cliente: elige a quién se le fía',
+    });
+  });
+
+  it('con cliente, el crédito cuenta como un medio sin cambio', () => {
+    expect(settlePayments('1190.00', credit('1190'), { hasCustomer: true })).toEqual({
+      ok: true,
+      applied: [{ method: 'credito', amount: '1190.00', received: null }],
+      change: '0.00',
+    });
+  });
+
+  it('crédito y efectivo: el efectivo cubre lo que falta', () => {
+    const result = settlePayments('1190.00', credit('500', { method: 'efectivo', amount: '1000' }), { hasCustomer: true });
+    expect(result).toEqual({
+      ok: true,
+      applied: [
+        { method: 'credito', amount: '500.00', received: null },
+        { method: 'efectivo', amount: '690.00', received: '1000.00' },
+      ],
+      change: '310.00',
+    });
+  });
+
+  it('el crédito no puede superar el total', () => {
+    const result = settlePayments('1190.00', credit('2000'), { hasCustomer: true });
+    expect(result.ok).toBe(false);
+  });
+});
